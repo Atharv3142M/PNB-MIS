@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNB MIS — Management Information System</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════ TOKENS */
+:root{
+  --navy:#0a1628;--navy2:#132040;--navy3:#1e3260;
+  --gold:#c8922a;--gold2:#e8b84b;
+  --red:#c0392b;--green:#166534;--teal:#0e7490;--purple:#6d28d9;
+  --white:#fff;--off:#f8f7f4;--border:#e2ddd4;--border2:#ccc6bb;
+  --txt:#1a1510;--muted:#6b6355;
+  --r:10px;--sh:0 1px 8px rgba(10,22,40,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--off);color:var(--txt);display:flex;height:100vh;overflow:hidden;font-size:14px;}
+
+/* ═══════════════════════════════════════════════════════════════ LOADING */
+#boot{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s;}
+#boot.out{opacity:0;pointer-events:none;}
+.boot-logo{font-size:38px;font-weight:700;color:var(--gold2);letter-spacing:3px;margin-bottom:6px;}
+.boot-sub{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:3px;text-transform:uppercase;margin-bottom:44px;}
+.boot-bar{width:220px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+.boot-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s ease;}
+.boot-msg{margin-top:12px;font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.5px;}
+
+/* ═══════════════════════════════════════════════════════════════ LOGIN */
+#login{position:fixed;inset:0;background:var(--navy);display:none;align-items:center;justify-content:center;z-index:9998;}
+#login.on{display:flex;}
+.lcard{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:44px 46px;width:420px;}
+.llogo{font-size:26px;font-weight:700;color:var(--gold2);text-align:center;letter-spacing:1px;}
+.ltag{text-align:center;font-size:10px;color:rgba(255,255,255,.3);letter-spacing:2.5px;text-transform:uppercase;margin:4px 0 30px;}
+.ll{display:block;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;}
+.li{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 13px;color:white;font-family:inherit;font-size:14px;transition:border-color .2s;margin-bottom:14px;}
+.li:focus{outline:none;border-color:var(--gold);}
+.lbtn{width:100%;background:var(--gold);color:white;border:none;padding:11px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+.lbtn:hover{background:var(--gold2);}
+.lerr{color:#fca5a5;font-size:12px;text-align:center;margin-top:8px;min-height:18px;}
+.lhint{margin-top:24px;border-top:1px solid rgba(255,255,255,.07);padding-top:16px;}
+.lhint-t{font-size:9px;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.chip{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:6px;padding:6px 9px;cursor:pointer;transition:.15s;}
+.chip:hover{background:rgba(200,146,42,.15);border-color:rgba(200,146,42,.3);}
+.chip-r{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;}
+.chip-c{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px;}
+
+/* ═══════════════════════════════════════════════════════════════ APP SHELL */
+#app{display:none;width:100%;height:100vh;}
+#app.on{display:flex;}
+.sidebar{width:228px;background:var(--navy);display:flex;flex-direction:column;height:100vh;flex-shrink:0;}
+.sb-logo{padding:18px 16px 13px;border-bottom:1px solid rgba(200,146,42,.15);}
+.sb-brand{font-size:20px;font-weight:700;color:var(--gold2);letter-spacing:.5px;}
+.sb-tag{font-size:9px;color:rgba(255,255,255,.28);letter-spacing:1.8px;text-transform:uppercase;margin-top:2px;}
+.sb-nav{flex:1;padding:8px 7px;overflow-y:auto;}
+.sb-sec{font-size:9px;color:rgba(255,255,255,.22);letter-spacing:1.8px;text-transform:uppercase;padding:12px 11px 4px;}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:7px;cursor:pointer;color:rgba(255,255,255,.52);transition:.12s;margin-bottom:1px;font-size:13px;user-select:none;}
+.ni:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.86);}
+.ni.active{background:rgba(200,146,42,.18);color:var(--gold2);}
+.ni.locked{opacity:.3;cursor:not-allowed;}
+.ni.locked:hover{background:none;color:rgba(255,255,255,.3);}
+.ni-icon{font-size:14px;width:17px;text-align:center;flex-shrink:0;}
+.nbadge{margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;}
+.sb-user{padding:11px 13px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:9px;}
+.su-av{width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--navy);flex-shrink:0;}
+.su-info{min-width:0;flex:1;}
+.su-name{font-size:12px;color:rgba(255,255,255,.78);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.su-role{font-size:10px;color:rgba(255,255,255,.32);}
+.su-out{background:none;border:none;color:rgba(255,255,255,.28);cursor:pointer;font-size:15px;padding:4px;border-radius:4px;flex-shrink:0;}
+.su-out:hover{color:rgba(255,255,255,.7);}
+
+/* ═══════════════════════════════════════════════════════════════ MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 26px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.04);}
+.tb-title{font-size:16px;font-weight:700;}
+.tb-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.tb-live{background:#dcfce7;color:#166534;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;}
+.tb-date{font-size:12px;color:var(--muted);}
+.tb-btn{background:none;border:1px solid var(--border);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:14px;position:relative;}
+.tb-dot{position:absolute;top:3px;right:3px;width:7px;height:7px;background:#ef4444;border-radius:50%;border:1.5px solid #fff;}
+.content{flex:1;overflow-y:auto;padding:22px 26px;}
+
+/* ═══════════════════════════════════════════════════════════════ DB SYNC BAR */
+#syncbar{position:fixed;bottom:0;right:0;left:228px;background:var(--navy2);color:rgba(255,255,255,.7);font-size:11px;padding:5px 20px;display:flex;align-items:center;justify-content:space-between;z-index:100;transition:opacity .3s;}
+#syncbar.hidden{opacity:0;pointer-events:none;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:6px;display:inline-block;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-actions{display:flex;gap:8px;}
+.sync-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);border-radius:5px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:inherit;}
+.sync-btn:hover{background:rgba(255,255,255,.18);}
+.sync-btn.gold{background:rgba(200,146,42,.25);border-color:rgba(200,146,42,.4);color:var(--gold2);}
+
+/* ═══════════════════════════════════════════════════════════════ PAGES */
+.page{display:none;animation:fi .2s ease;padding-bottom:40px;}
+.page.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════════════════════════════════════════════════ KPI */
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.kcard{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;box-shadow:var(--sh);}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kc-b::before{background:var(--teal)} .kc-g::before{background:#16a34a} .kc-r::before{background:var(--red)} .kc-o::before{background:var(--gold)} .kc-p::before{background:var(--purple)}
+.kl{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.kv{font-size:24px;font-weight:700;margin:5px 0 3px;line-height:1.1;}
+.kd{font-size:11px;} .kd.up{color:#16a34a} .kd.dn{color:var(--red)} .kd.n{color:var(--muted)}
+.ki{position:absolute;top:14px;right:14px;font-size:24px;opacity:.1;}
+.spark{display:flex;align-items:flex-end;gap:2px;height:26px;margin-top:9px;}
+.sb{border-radius:2px 2px 0 0;flex:1;}
+
+/* ═══════════════════════════════════════════════════════════════ CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);margin-bottom:18px;}
+.card-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:11px;}
+.sec-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.sec-r{display:flex;gap:7px;flex-shrink:0;align-items:center;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px;}
+.g65{display:grid;grid-template-columns:65fr 35fr;gap:18px;margin-bottom:18px;}
+.g70{display:grid;grid-template-columns:70fr 30fr;gap:18px;margin-bottom:18px;}
+
+/* ═══════════════════════════════════════════════════════════════ TABLES */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);background:#fafaf8;white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#fafaf8;}
+tbody td{padding:9px 12px;vertical-align:middle;}
+.mono{font-family:'SF Mono',Monaco,monospace;font-size:11.5px;}
+
+/* ═══════════════════════════════════════════════════════════════ INLINE EDIT */
+.editable{cursor:pointer;border-radius:4px;padding:2px 5px;transition:.15s;display:inline-block;min-width:30px;}
+.editable:hover{background:rgba(14,116,144,.08);outline:1px dashed var(--teal);}
+.editable.editing{background:#fff;outline:2px solid var(--teal);border-radius:4px;padding:0;}
+.edit-input{border:none;outline:none;background:transparent;font-family:inherit;font-size:inherit;color:inherit;padding:2px 5px;width:100%;min-width:60px;}
+.edit-select{border:none;outline:none;background:#fff;font-family:inherit;font-size:inherit;padding:2px 4px;border-radius:3px;}
+.cell-actions{display:none;gap:4px;margin-left:4px;}
+tr:hover .cell-actions{display:inline-flex;}
+.ca-btn{background:none;border:none;cursor:pointer;font-size:11px;padding:1px 5px;border-radius:3px;font-family:inherit;}
+.ca-save{background:#dcfce7;color:#166534;} .ca-cancel{background:#fee2e2;color:#991b1b;}
+.ca-del{background:#fef3c7;color:#92400e;}
+
+/* ═══════════════════════════════════════════════════════════════ BADGES */
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.bg{background:#dcfce7;color:#166534} .br{background:#fee2e2;color:#991b1b}
+.by{background:#fef3c7;color:#92400e} .bb{background:#dbeafe;color:#1e40af}
+.bp{background:#ede9fe;color:#5b21b6} .bn{background:#f3f4f6;color:#374151}
+.bo{background:#ffedd5;color:#9a3412} .bt{background:#ccfbf1;color:#0f766e}
+
+/* ═══════════════════════════════════════════════════════════════ BUTTONS */
+.btn{padding:7px 15px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:.12s;display:inline-flex;align-items:center;gap:5px;}
+.btn-navy{background:var(--navy);color:#fff;} .btn-navy:hover{background:var(--navy3);}
+.btn-gold{background:var(--gold);color:#fff;} .btn-gold:hover{background:var(--gold2);}
+.btn-red{background:#dc2626;color:#fff;} .btn-red:hover{background:#b91c1c;}
+.btn-green{background:#16a34a;color:#fff;} .btn-green:hover{background:#15803d;}
+.btn-teal{background:var(--teal);color:#fff;} .btn-teal:hover{opacity:.9;}
+.btn-out{background:none;border:1px solid var(--border);color:var(--txt);} .btn-out:hover{border-color:var(--border2);background:#fafaf8;}
+.btn-ghost{background:none;border:none;color:var(--muted);padding:5px 8px;} .btn-ghost:hover{color:var(--txt);}
+.btn-sm{padding:5px 11px;font-size:11px;}
+.btn-xs{padding:3px 8px;font-size:10px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ═══════════════════════════════════════════════════════════════ FORMS */
+.fg{margin-bottom:13px;}
+.fl{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+.fi{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--txt);background:var(--white);transition:border-color .15s;}
+.fi:focus{outline:none;border-color:var(--teal);}
+.fsel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6355'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.ferr{font-size:11px;color:var(--red);margin-top:3px;}
+
+/* ═══════════════════════════════════════════════════════════════ MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;}
+.ov.on{display:flex;}
+.modal{background:var(--white);border-radius:13px;padding:26px 28px;width:500px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal-lg{width:660px;}
+.modal-xl{width:820px;}
+.modal-t{font-size:17px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:0 4px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:14px;border-top:1px solid var(--border);}
+
+/* ═══════════════════════════════════════════════════════════════ MISC */
+.progress{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pf{height:100%;border-radius:3px;transition:width .4s;}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.srow:last-child{border-bottom:none;}
+.sk{font-size:12px;color:var(--muted);}
+.sv{font-size:13px;font-weight:600;}
+.alert{padding:10px 13px;border-radius:7px;margin-bottom:9px;font-size:12px;display:flex;align-items:flex-start;gap:8px;border-left:3px solid;}
+.a-r{background:#fef2f2;color:#991b1b;border-color:#ef4444;}
+.a-y{background:#fffbeb;color:#92400e;border-color:#f59e0b;}
+.a-b{background:#eff6ff;color:#1d4ed8;border-color:#3b82f6;}
+.a-g{background:#f0fdf4;color:#166534;border-color:#22c55e;}
+.at{font-weight:700;margin-bottom:1px;}
+.toast{position:fixed;bottom:52px;right:22px;background:var(--navy);color:#fff;padding:11px 18px;border-radius:9px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(100px);transition:transform .25s;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:300px;}
+.toast.on{transform:translateY(0);}
+.toast.tg{background:#166534;} .toast.tr{background:#991b1b;} .toast.to{background:#92400e;}
+.search-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.search-input{flex:1;padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;}
+.search-input:focus{outline:none;border-color:var(--teal);}
+.pag{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:11px;color:var(--muted);}
+.pag-btns{display:flex;gap:5px;}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;}
+.bg-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.bar{border-radius:3px 3px 0 0;width:100%;}
+.bl{font-size:9px;color:var(--muted);margin-top:2px;text-align:center;}
+.bv{font-size:9px;font-weight:600;color:var(--muted);}
+.acc-den{text-align:center;padding:60px 20px;color:var(--muted);}
+.acc-den-i{font-size:46px;margin-bottom:10px;}
+.rtag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.rCMD{background:#1e1b4b;color:#a5b4fc} .rED{background:#1a2e1a;color:#86efac}
+.rGM{background:#1e3260;color:#93c5fd} .rDGM{background:#1c1917;color:#d6d3d1}
+.rRM{background:#431407;color:#fdba74} .rBM{background:#14532d;color:#6ee7b7}
+.rBO{background:#0c4a6e;color:#7dd3fc} .rTELLER{background:#4a1d96;color:#c4b5fd}
+.rAUDITOR{background:#831843;color:#f9a8d4}
+.risk-HIGH{background:#fee2e2;color:#991b1b;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;}
+.risk-MEDIUM{background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;}
+.risk-LOW{background:#dcfce7;color:#166534;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ BOOT ═══════════════════════════════════════════════════════════ -->
+<div id="boot">
+  <div class="boot-logo">PNB MIS</div>
+  <div class="boot-sub">Management Information System</div>
+  <div class="boot-bar"><div class="boot-fill" id="bfill" style="width:0%"></div></div>
+  <div class="boot-msg" id="bmsg">Starting...</div>
+</div>
+
+<!-- ═══ LOGIN ══════════════════════════════════════════════════════════ -->
+<div id="login">
+  <div class="lcard">
+    <div class="llogo">PNB MIS</div>
+    <div class="ltag">Punjab National Bank · Secure Portal</div>
+    <label class="ll">Employee ID</label>
+    <input class="li" id="li-id" placeholder="e.g. EMP001" autocomplete="off">
+    <label class="ll">Password</label>
+    <input class="li" id="li-pw" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
+    <button class="lbtn" onclick="login()">Sign In →</button>
+    <div class="lerr" id="lerr"></div>
+    <div class="lhint">
+      <div class="lhint-t">Quick Login — Demo Accounts</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sb-logo"><div class="sb-brand">PNB MIS</div><div class="sb-tag">Punjab National Bank</div></div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-user">
+      <div class="su-av" id="su-av">U</div>
+      <div class="su-info"><div class="su-name" id="su-name">User</div><div class="su-role" id="su-role">—</div></div>
+      <button class="su-out" onclick="logout()" title="Logout">⏻</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div><div class="tb-title" id="tb-t">Dashboard</div><div class="tb-sub" id="tb-s"></div></div>
+      <div class="tb-right">
+        <span class="tb-live">● LIVE</span>
+        <span class="tb-date" id="tb-d"></span>
+        <button class="tb-btn" onclick="go('fraud')" id="notif-btn" title="Alerts">🔔<div class="tb-dot" id="nd" style="display:none"></div></button>
+        <button class="tb-btn" onclick="exportDB()" title="Export Database">⬇ Export DB</button>
+        <button class="tb-btn" onclick="document.getElementById('imp-file').click()" title="Import Database">⬆ Import DB</button>
+        <input type="file" id="imp-file" accept=".json" style="display:none" onchange="importDB(this)">
+      </div>
+    </header>
+
+    <div class="content" id="content">
+      <div class="page active" id="page-dashboard"></div>
+      <div class="page" id="page-customers"></div>
+      <div class="page" id="page-transactions"></div>
+      <div class="page" id="page-loans"></div>
+      <div class="page" id="page-risk"></div>
+      <div class="page" id="page-fraud"></div>
+      <div class="page" id="page-financial"></div>
+      <div class="page" id="page-treasury"></div>
+      <div class="page" id="page-branches"></div>
+      <div class="page" id="page-complaints"></div>
+      <div class="page" id="page-reports"></div>
+      <div class="page" id="page-users"></div>
+      <div class="page" id="page-audit"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DB SYNC STATUS BAR -->
+<div id="syncbar" class="hidden">
+  <span><span class="sync-dot"></span><span id="sync-msg">Database synced to localStorage</span></span>
+  <div class="sync-actions">
+    <span id="sync-time" style="font-size:10px;color:rgba(255,255,255,.3)"></span>
+    <button class="sync-btn gold" onclick="exportDB()">⬇ Export JSON</button>
+    <button class="sync-btn" onclick="document.getElementById('imp-file').click()">⬆ Import JSON</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<!-- MODAL ROOT -->
+<div id="mroot"></div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════════════════
+//  PURE JS DATABASE ENGINE — no external deps
+// ═══════════════════════════════════════════════════════════════════════════
+const DB_KEY = 'pnb_mis_db_v2';
+
+let DB = {
+  roles:[], users:[], branches:[], customers:[], transactions:[],
+  loans:[], fraud_alerts:[], audit_log:[], financial_snapshots:[],
+  complaints:[], _seq:{}
+};
+
+function nextId(table) {
+  if (!DB._seq[table]) DB._seq[table] = 1;
+  return DB._seq[table]++;
+}
+
+// Auto-increment initializer after load
+function recalcSeqs() {
+  ['roles','users','branches','customers','transactions','loans','fraud_alerts','audit_log','financial_snapshots','complaints'].forEach(t => {
+    const rows = DB[t] || [];
+    DB._seq[t] = rows.length ? Math.max(...rows.map(r=>r.id||0)) + 1 : 1;
+  });
+}
+
+// Simple query helpers
+const find = (table, pred) => (DB[table]||[]).filter(pred);
+const findOne = (table, pred) => (DB[table]||[]).find(pred);
+const insert = (table, obj) => {
+  obj.id = nextId(table);
+  obj.created_at = obj.created_at || now();
+  DB[table].push(obj);
+  saveDB();
+  return obj;
+};
+const update = (table, id, patch) => {
+  const i = DB[table].findIndex(r=>r.id===id);
+  if (i>=0) { Object.assign(DB[table][i], patch, {updated_at:now()}); saveDB(); return DB[table][i]; }
+  return null;
+};
+const remove = (table, id) => {
+  const i = DB[table].findIndex(r=>r.id===id);
+  if (i>=0) { DB[table].splice(i,1); saveDB(); return true; }
+  return false;
+};
+const now = () => new Date().toISOString().replace('T',' ').substring(0,19);
+const uid = () => Date.now().toString(36).toUpperCase();
+
+// ─── localStorage persistence ───────────────────────────────────────────────
+function saveDB() {
+  try {
+    localStorage.setItem(DB_KEY, JSON.stringify(DB));
+    showSync();
+  } catch(e) { console.warn('localStorage full',e); }
+}
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) { DB = JSON.parse(raw); recalcSeqs(); return true; }
+  } catch(e) {}
+  return false;
+}
+
+let syncTimer;
+function showSync() {
+  const bar = document.getElementById('syncbar');
+  document.getElementById('sync-time').textContent = 'Last saved: ' + new Date().toLocaleTimeString('en-IN');
+  bar.classList.remove('hidden');
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => bar.classList.add('hidden'), 4000);
+}
+
+// Real-time sync across tabs via storage events
+window.addEventListener('storage', e => {
+  if (e.key === DB_KEY && e.newValue) {
+    try {
+      DB = JSON.parse(e.newValue);
+      recalcSeqs();
+      if (currentSession) renderPage(currentPage);
+      showToast('DB updated from another tab', 'to');
+    } catch(e){}
+  }
+});
+
+// ─── Export / Import ─────────────────────────────────────────────────────────
+function exportDB() {
+  const blob = new Blob([JSON.stringify(DB, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `PNB_MIS_DB_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  showToast('Database exported as JSON ✓', 'tg');
+  auditLog('EXPORT_DB', 'system', null, 'Full database exported');
+}
+
+function importDB(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.users || !data.customers) { showToast('Invalid DB file', 'tr'); return; }
+      DB = data;
+      recalcSeqs();
+      saveDB();
+      showToast('Database imported successfully ✓', 'tg');
+      if (currentSession) renderPage(currentPage);
+    } catch(err) { showToast('Import failed: ' + err.message, 'tr'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  SEED DATA
+// ═══════════════════════════════════════════════════════════════════════════
+function hashPwd(p) {
+  let h = 5381;
+  for (let i=0;i<p.length;i++) h = ((h<<5)+h)^p.charCodeAt(i);
+  return String(h>>>0);
+}
+
+function seed() {
+  DB.roles = [
+    {id:1,name:'CMD',description:'Chairman & Managing Director',level:1},
+    {id:2,name:'ED',description:'Executive Director',level:2},
+    {id:3,name:'GM',description:'General Manager',level:2},
+    {id:4,name:'DGM',description:'Deputy General Manager',level:3},
+    {id:5,name:'RM',description:'Regional Manager',level:3},
+    {id:6,name:'BM',description:'Branch Manager',level:4},
+    {id:7,name:'BO',description:'Banking Officer',level:5},
+    {id:8,name:'TELLER',description:'Teller / Cashier',level:5},
+    {id:9,name:'AUDITOR',description:'Internal Auditor',level:3},
+  ];
+  DB.branches = [
+    {id:1,code:'DEL001',name:'Delhi Main Branch',zone:'NORTH',city:'New Delhi',state:'Delhi',ifsc:'PUNB0001200',deposits:428200,advances:312400,npa_pct:3.8},
+    {id:2,code:'MUM001',name:'Mumbai BKC Branch',zone:'WEST',city:'Mumbai',state:'Maharashtra',ifsc:'PUNB0002100',deposits:318400,advances:242800,npa_pct:4.1},
+    {id:3,code:'CHD001',name:'Chandigarh Branch',zone:'NORTH',city:'Chandigarh',state:'Chandigarh',ifsc:'PUNB0003100',deposits:124200,advances:98400,npa_pct:2.9},
+    {id:4,code:'KOL001',name:'Kolkata Main Branch',zone:'EAST',city:'Kolkata',state:'West Bengal',ifsc:'PUNB0004100',deposits:212800,advances:148200,npa_pct:5.2},
+    {id:5,code:'PAT001',name:'Patna Branch',zone:'EAST',city:'Patna',state:'Bihar',ifsc:'PUNB0005100',deposits:84100,advances:62800,npa_pct:6.8},
+    {id:6,code:'JAI001',name:'Jaipur Branch',zone:'NORTH',city:'Jaipur',state:'Rajasthan',ifsc:'PUNB0006100',deposits:98400,advances:74200,npa_pct:3.4},
+    {id:7,code:'CHE001',name:'Chennai Branch',zone:'SOUTH',city:'Chennai',state:'Tamil Nadu',ifsc:'PUNB0007100',deposits:142800,advances:108200,npa_pct:2.8},
+    {id:8,code:'HYD001',name:'Hyderabad Branch',zone:'SOUTH',city:'Hyderabad',state:'Telangana',ifsc:'PUNB0008100',deposits:118600,advances:92400,npa_pct:3.1},
+  ];
+  DB.users = [
+    {id:1,emp_id:'EMP001',name:'Suresh Patel',email:'cmd@pnb.in',pwd:hashPwd('cmd123'),role_id:1,branch_id:null,zone:'HEAD_OFFICE',active:1,last_login:null},
+    {id:2,emp_id:'EMP002',name:'Anjali Verma',email:'ed@pnb.in',pwd:hashPwd('ed123'),role_id:2,branch_id:null,zone:'HEAD_OFFICE',active:1,last_login:null},
+    {id:3,emp_id:'EMP003',name:'Rajesh Kumar',email:'gm@pnb.in',pwd:hashPwd('gm123'),role_id:3,branch_id:null,zone:'NORTH',active:1,last_login:null},
+    {id:4,emp_id:'EMP004',name:'Priya Sharma',email:'dgm@pnb.in',pwd:hashPwd('dgm123'),role_id:4,branch_id:1,zone:'NORTH',active:1,last_login:null},
+    {id:5,emp_id:'EMP005',name:'Mohan Das',email:'rm@pnb.in',pwd:hashPwd('rm123'),role_id:5,branch_id:4,zone:'EAST',active:1,last_login:null},
+    {id:6,emp_id:'EMP006',name:'Kavita Singh',email:'bm.del@pnb.in',pwd:hashPwd('bm123'),role_id:6,branch_id:1,zone:'NORTH',active:1,last_login:null},
+    {id:7,emp_id:'EMP007',name:'Amit Tiwari',email:'bm.mum@pnb.in',pwd:hashPwd('bm456'),role_id:6,branch_id:2,zone:'WEST',active:1,last_login:null},
+    {id:8,emp_id:'EMP008',name:'Ritu Gupta',email:'bo@pnb.in',pwd:hashPwd('bo123'),role_id:7,branch_id:1,zone:'NORTH',active:1,last_login:null},
+    {id:9,emp_id:'EMP009',name:'Sandeep Yadav',email:'teller@pnb.in',pwd:hashPwd('tel123'),role_id:8,branch_id:1,zone:'NORTH',active:1,last_login:null},
+    {id:10,emp_id:'EMP010',name:'Nisha Agarwal',email:'auditor@pnb.in',pwd:hashPwd('aud123'),role_id:9,branch_id:null,zone:'HEAD_OFFICE',active:1,last_login:null},
+  ];
+  DB.customers = [
+    {id:1,account_no:'PNB0011283746',name:'Anita Sharma',email:'anita@email.com',mobile:'9811234567',aadhaar:'1234-5678-1234',pan:'ABCDS1234F',dob:'1985-04-12',address:'22 MG Road, Delhi',kyc:'VERIFIED',type:'SAVINGS',balance:241500,branch_id:1,active:1,created_by:1},
+    {id:2,account_no:'PNB0011283812',name:'Ramesh Prasad',email:'ramesh@biz.com',mobile:'9822345678',aadhaar:'2345-6789-2345',pan:'PRSRM2345G',dob:'1972-08-30',address:'14 Park St, Mumbai',kyc:'VERIFIED',type:'CURRENT',balance:1892000,branch_id:2,active:1,created_by:1},
+    {id:3,account_no:'PNB0011284021',name:'Kavita Singh',email:'ksingh@mail.com',mobile:'9833456789',aadhaar:'3456-7890-3456',pan:'SNGKV3456H',dob:'1990-03-22',address:'8 Civil Lines, Chandigarh',kyc:'PENDING',type:'SAVINGS',balance:55200,branch_id:3,active:1,created_by:1},
+    {id:4,account_no:'PNB0011284109',name:'Vikram Industries',email:'vi@corp.com',mobile:'9844567890',aadhaar:'4567-8901-4567',pan:'VKRMI4567I',dob:'1968-11-15',address:'Industrial Estate, Kolkata',kyc:'VERIFIED',type:'CURRENT',balance:12480000,branch_id:4,active:1,created_by:1},
+    {id:5,account_no:'PNB0011284230',name:'Suresh Yadav',email:'syadav@mail.com',mobile:'9855678901',aadhaar:'5678-9012-5678',pan:'YDVSRS5678J',dob:'1995-07-04',address:'Boring Road, Patna',kyc:'EXPIRED',type:'SAVINGS',balance:8400,branch_id:5,active:1,created_by:1},
+    {id:6,account_no:'PNB0011284388',name:'Meera Agrawal',email:'meera@nri.com',mobile:'9866789012',aadhaar:'6789-0123-6789',pan:'AGWLMR6789K',dob:'1980-01-28',address:'NRI Colony, Jaipur',kyc:'VERIFIED',type:'NRI',balance:4215000,branch_id:6,active:1,created_by:1},
+    {id:7,account_no:'PNB0011284421',name:'Deepak Sharma',email:'deepak@mail.com',mobile:'9877890123',aadhaar:'7890-1234-7890',pan:'SHRMDK7890L',dob:'1988-09-18',address:'Anna Nagar, Chennai',kyc:'VERIFIED',type:'SAVINGS',balance:328000,branch_id:7,active:1,created_by:1},
+    {id:8,account_no:'PNB0011284512',name:'Bharat Steel Corp',email:'bsc@corp.com',mobile:'9988901234',aadhaar:'8901-2345-8901',pan:'BHRTS8901M',dob:'1960-06-10',address:'HITEC City, Hyderabad',kyc:'VERIFIED',type:'CURRENT',balance:8420000,branch_id:8,active:1,created_by:1},
+  ];
+  DB.transactions = [
+    {id:1,ref:'TXN24119231',from_acc:'PNB0011283812',to_acc:null,type:'RTGS',channel:'RTGS',amount:52000000,bal_after:1800000,desc:'RTGS to SBI',status:'PROCESSED',branch_id:1,by:1,fraud_score:0.02,created_at:'2025-03-22 14:32:00'},
+    {id:2,ref:'TXN24119228',from_acc:'PNB0011284388',to_acc:null,type:'NEFT',channel:'NEFT',amount:1850000,bal_after:2365000,desc:'NEFT transfer',status:'PROCESSED',branch_id:3,by:1,fraud_score:0.01,created_at:'2025-03-22 14:18:00'},
+    {id:3,ref:'TXN24119225',from_acc:'PNB0011284109',to_acc:'PNB0011283812',type:'TRANSFER',channel:'IMPS',amount:8200000,bal_after:4280000,desc:'Advance payment',status:'PENDING',branch_id:4,by:1,fraud_score:0.15,created_at:'2025-03-22 13:55:00'},
+    {id:4,ref:'TXN24119220',from_acc:'PNB0011284230',to_acc:null,type:'UPI',channel:'UPI',amount:410000,bal_after:0,desc:'UPI flagged',status:'FLAGGED',branch_id:5,by:1,fraud_score:0.97,created_at:'2025-03-22 13:41:00'},
+    {id:5,ref:'TXN24119218',from_acc:'PNB0011284512',to_acc:null,type:'RTGS',channel:'RTGS',amount:128000000,bal_after:8420000,desc:'Corporate RTGS',status:'PROCESSED',branch_id:4,by:1,fraud_score:0.01,created_at:'2025-03-22 13:22:00'},
+    {id:6,ref:'TXN24119215',from_acc:'PNB0011284021',to_acc:null,type:'ATM',channel:'ATM',amount:10000,bal_after:45200,desc:'ATM withdrawal',status:'PROCESSED',branch_id:3,by:1,fraud_score:0.02,created_at:'2025-03-22 12:58:00'},
+    {id:7,ref:'TXN24119212',from_acc:'PNB0011284421',to_acc:null,type:'NEFT',channel:'NEFT',amount:340000,bal_after:328000,desc:'NEFT failed',status:'FAILED',branch_id:7,by:1,fraud_score:0.05,created_at:'2025-03-22 12:40:00'},
+    {id:8,ref:'TXN24119200',from_acc:'PNB0011283746',to_acc:null,type:'CREDIT',channel:'BRANCH',amount:50000,bal_after:291500,desc:'Cash deposit',status:'PROCESSED',branch_id:1,by:1,fraud_score:0.01,created_at:'2025-03-22 11:20:00'},
+  ];
+  DB.loans = [
+    {id:1,loan_id:'LN2024-7821',customer_id:1,type:'HOME',principal:4500000,rate:8.50,tenure:240,emi:38200,outstanding:4500000,cibil:782,status:'APPROVED',npa_days:0,collateral:'Property',applied_by:1,approved_by:1,branch_id:1,applied_at:'2024-12-10',approved_at:'2024-12-15'},
+    {id:2,loan_id:'LN2024-7820',customer_id:2,type:'MSME',principal:25000000,rate:11.0,tenure:60,emi:null,outstanding:25000000,cibil:761,status:'UNDER_REVIEW',npa_days:0,collateral:'Machinery',applied_by:1,approved_by:null,branch_id:2,applied_at:'2025-01-15',approved_at:null},
+    {id:3,loan_id:'LN2024-7819',customer_id:3,type:'PERSONAL',principal:800000,rate:11.5,tenure:48,emi:18400,outstanding:800000,cibil:651,status:'PENDING',npa_days:0,collateral:null,applied_by:8,approved_by:null,branch_id:3,applied_at:'2025-02-20',approved_at:null},
+    {id:4,loan_id:'LN2024-7818',customer_id:6,type:'KISAN',principal:1200000,rate:7.0,tenure:36,emi:24600,outstanding:1200000,cibil:710,status:'APPROVED',npa_days:0,collateral:'Land deed',applied_by:1,approved_by:1,branch_id:3,applied_at:'2025-01-08',approved_at:'2025-01-12'},
+    {id:5,loan_id:'LN2024-7817',customer_id:7,type:'CAR',principal:650000,rate:9.2,tenure:60,emi:14200,outstanding:0,cibil:582,status:'REJECTED',npa_days:0,collateral:'Vehicle',applied_by:1,approved_by:null,branch_id:7,applied_at:'2025-01-25',approved_at:null},
+    {id:6,loan_id:'LN2024-7816',customer_id:3,type:'EDUCATION',principal:1000000,rate:8.8,tenure:84,emi:21800,outstanding:980000,cibil:740,status:'DISBURSED',npa_days:0,collateral:null,applied_by:1,approved_by:1,branch_id:3,applied_at:'2024-11-01',approved_at:'2024-11-05'},
+    {id:7,loan_id:'LN2024-4812',customer_id:5,type:'PROJECT',principal:180000000,rate:12.5,tenure:120,emi:null,outstanding:165000000,cibil:490,status:'NPA',npa_days:90,collateral:'Equipment',applied_by:1,approved_by:1,branch_id:5,applied_at:'2023-06-01',approved_at:'2023-06-10'},
+  ];
+  DB.fraud_alerts = [
+    {id:1,ref:'ALERT-2024-0891',account_no:'PNB0011284230',txn_ref:'TXN24119220',type:'VELOCITY',severity:'CRITICAL',confidence:97.2,desc:'14 UPI txns in 8 mins, ₹4.1L total from Patna',status:'OPEN',resolved_by:null,created_at:'2025-03-22 13:42:00'},
+    {id:2,ref:'ALERT-2024-0890',account_no:'PNB0011283746',txn_ref:null,type:'IDENTITY',severity:'HIGH',confidence:91.4,desc:'3 login attempts from 3 different IPs in 2 hrs',status:'OPEN',resolved_by:null,created_at:'2025-03-22 12:30:00'},
+    {id:3,ref:'ALERT-2024-0889',account_no:'PNB0011284109',txn_ref:'TXN24119225',type:'UNUSUAL_AMOUNT',severity:'MEDIUM',confidence:78.1,desc:'₹82L IMPS — 40x avg transaction size',status:'OPEN',resolved_by:null,created_at:'2025-03-22 14:00:00'},
+    {id:4,ref:'ALERT-2024-0885',account_no:'PNB0011284421',txn_ref:'TXN24119212',type:'VELOCITY',severity:'LOW',confidence:45.2,desc:'5 failed NEFT attempts in 1 hour',status:'RESOLVED',resolved_by:1,created_at:'2025-03-20 15:10:00'},
+  ];
+  DB.financial_snapshots = [
+    {id:1,period:'Q1-FY25',type:'QUARTERLY',deposits:13200000,advances:9100000,profit:2940000,gnpa:5.20,nnpa:1.40,car:15.80,lcr:138,nim:2.95,roe:16.2,roa:0.98,ci:56.1},
+    {id:2,period:'Q2-FY25',type:'QUARTERLY',deposits:13600000,advances:9400000,profit:3190000,gnpa:4.80,nnpa:1.20,car:16.10,lcr:140,nim:3.00,roe:17.0,roa:1.04,ci:55.3},
+    {id:3,period:'Q3-FY25',type:'QUARTERLY',deposits:14200000,advances:9800000,profit:3441000,gnpa:4.09,nnpa:0.96,car:16.42,lcr:142,nim:3.04,roe:18.4,roa:1.12,ci:54.2},
+  ];
+  DB.complaints = [
+    {id:1,ref:'CMP-2025-0412',customer_id:1,category:'ATM Issue',desc:'Card swallowed at DEL-ATM-024',priority:'HIGH',status:'IN_PROGRESS',assigned_to:null,branch_id:1,resolution:null,created_at:'2025-03-15'},
+    {id:2,ref:'CMP-2025-0410',customer_id:2,category:'Loan Query',desc:'Home loan EMI discrepancy in Feb statement',priority:'NORMAL',status:'OPEN',assigned_to:null,branch_id:2,resolution:null,created_at:'2025-03-14'},
+    {id:3,ref:'CMP-2025-0405',customer_id:3,category:'KYC',desc:'KYC docs submitted, verification still pending',priority:'URGENT',status:'RESOLVED',assigned_to:6,branch_id:3,resolution:'KYC verified by branch manager',created_at:'2025-03-10'},
+    {id:4,ref:'CMP-2025-0388',customer_id:4,category:'Net Banking',desc:'Unable to login to net banking for 3 days',priority:'HIGH',status:'OPEN',assigned_to:null,branch_id:4,resolution:null,created_at:'2025-03-08'},
+  ];
+  DB.audit_log = [];
+  DB._seq = {};
+  recalcSeqs();
+  saveDB();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AUTH & RBAC
+// ═══════════════════════════════════════════════════════════════════════════
+let currentSession = null;
+let currentPage = 'dashboard';
+
+const PERMS = {
+  CMD:     ['dashboard','customers','transactions','loans','risk','fraud','financial','treasury','branches','complaints','reports','users','audit'],
+  ED:      ['dashboard','customers','transactions','loans','risk','fraud','financial','treasury','branches','complaints','reports','audit'],
+  GM:      ['dashboard','customers','transactions','loans','risk','fraud','financial','branches','complaints','reports'],
+  DGM:     ['dashboard','customers','transactions','loans','risk','fraud','financial','branches','complaints'],
+  RM:      ['dashboard','customers','transactions','loans','risk','branches','complaints'],
+  BM:      ['dashboard','customers','transactions','loans','branches','complaints'],
+  BO:      ['dashboard','customers','transactions','complaints'],
+  TELLER:  ['dashboard','transactions'],
+  AUDITOR: ['dashboard','customers','transactions','loans','risk','fraud','financial','audit'],
+};
+const ACTIONS = {
+  CMD:['view','create','edit','delete','approve','reject','block','export','report'],
+  ED:['view','create','edit','approve','reject','block','export','report'],
+  GM:['view','create','edit','approve','reject','export','report'],
+  DGM:['view','create','edit','approve','reject','export'],
+  RM:['view','create','edit','approve'],
+  BM:['view','create','edit','approve'],
+  BO:['view','create','edit'],
+  TELLER:['view','create'],
+  AUDITOR:['view','export'],
+};
+
+const can = (mod) => PERMS[currentSession?.role]?.includes(mod) ?? false;
+const canDo = (act) => ACTIONS[currentSession?.role]?.includes(act) ?? false;
+
+function login() {
+  const empId = document.getElementById('li-id').value.trim();
+  const pwd   = document.getElementById('li-pw').value;
+  document.getElementById('lerr').textContent = '';
+  if (!empId || !pwd) { document.getElementById('lerr').textContent = 'Enter Employee ID and password.'; return; }
+  const user = findOne('users', u => u.emp_id === empId && u.pwd === hashPwd(pwd) && u.active);
+  if (!user) { document.getElementById('lerr').textContent = 'Invalid credentials or account inactive.'; return; }
+  const role = findOne('roles', r => r.id === user.role_id);
+  update('users', user.id, {last_login: now()});
+  currentSession = {id:user.id, empId:user.emp_id, name:user.name, role:role.name, branchId:user.branch_id, zone:user.zone};
+  auditLog('LOGIN','auth',null,'Logged in');
+  showApp();
+}
+
+function logout() {
+  auditLog('LOGOUT','auth',null,'Logged out');
+  currentSession = null;
+  document.getElementById('app').classList.remove('on');
+  document.getElementById('login').classList.add('on');
+}
+
+function auditLog(action, module, recordId=null, details='') {
+  if (!currentSession) return;
+  DB.audit_log.unshift({id:nextId('audit_log'),user_id:currentSession.id,emp_id:currentSession.empId,role:currentSession.role,action,module,record_id:String(recordId||''),details,created_at:now()});
+  if (DB.audit_log.length > 500) DB.audit_log = DB.audit_log.slice(0,500);
+  saveDB();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════════
+const NAV = [
+  {sec:'Overview'},
+  {id:'dashboard',label:'Dashboard',icon:'🏠'},
+  {sec:'Operations'},
+  {id:'customers',label:'Customers',icon:'👥'},
+  {id:'transactions',label:'Transactions',icon:'💸'},
+  {id:'loans',label:'Loans & Credit',icon:'🏦'},
+  {id:'complaints',label:'Complaints',icon:'📩'},
+  {sec:'Risk & Compliance'},
+  {id:'risk',label:'Risk Management',icon:'⚠️'},
+  {id:'fraud',label:'Fraud Detection',icon:'🔍',alert:true},
+  {sec:'Finance'},
+  {id:'financial',label:'Financial Reports',icon:'📊'},
+  {id:'treasury',label:'Treasury',icon:'💰'},
+  {sec:'Admin'},
+  {id:'branches',label:'Branch Network',icon:'🏢'},
+  {id:'reports',label:'MIS Reports',icon:'📋'},
+  {id:'users',label:'User Management',icon:'🔐'},
+  {id:'audit',label:'Audit Log',icon:'🔎'},
+];
+
+const META = {
+  dashboard:['Executive Dashboard','Strategic overview · FY 2024-25'],
+  customers:['Customer Management','Accounts · KYC · CRM'],
+  transactions:['Transaction Ledger','Real-time processing & channel analytics'],
+  loans:['Loans & Credit','Applications · EMI · NPA tracking'],
+  complaints:['Customer Complaints','Grievance management'],
+  risk:['Risk Management','Credit · Market · Operational risk'],
+  fraud:['Fraud Detection','AI-powered anomaly detection & alerts'],
+  financial:['Financial Reports','P&L · Ratios · Performance'],
+  treasury:['Treasury Management','Investments · ALM · Forex'],
+  branches:['Branch Network','Zone & branch performance'],
+  reports:['MIS Reports','Generate & schedule reports'],
+  users:['User Management','Roles · Access control · Staff'],
+  audit:['Audit Log','Full system activity trail'],
+};
+
+function buildNav() {
+  const openFraud = find('fraud_alerts', a=>a.status==='OPEN').length;
+  let html = '';
+  NAV.forEach(item => {
+    if (item.sec) { html += `<div class="sb-sec">${item.sec}</div>`; return; }
+    const locked = !can(item.id);
+    const active = currentPage===item.id;
+    const badge = item.alert && openFraud>0 ? `<span class="nbadge">${openFraud}</span>` : '';
+    html += `<div class="ni${active?' active':''}${locked?' locked':''}" ${locked?'':`onclick="go('${item.id}')"`}>
+      <span class="ni-icon">${item.icon}</span>${item.label}${badge}</div>`;
+  });
+  document.getElementById('sb-nav').innerHTML = html;
+  const av = currentSession.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('su-av').textContent = av;
+  document.getElementById('su-name').textContent = currentSession.name;
+  document.getElementById('su-role').textContent = currentSession.role;
+  const openFraudCount = find('fraud_alerts', a=>a.status==='OPEN').length;
+  const nd = document.getElementById('nd');
+  if (nd) nd.style.display = openFraudCount>0 ? '' : 'none';
+}
+
+function go(page) {
+  if (!can(page)) { showToast('Access denied for your role.','tr'); return; }
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`page-${page}`)?.classList.add('active');
+  const [title, sub] = META[page]||[page,''];
+  document.getElementById('tb-t').textContent = title;
+  document.getElementById('tb-s').textContent = sub;
+  buildNav();
+  renderPage(page);
+}
+
+function showApp() {
+  document.getElementById('login').classList.remove('on');
+  document.getElementById('app').classList.add('on');
+  document.getElementById('tb-d').textContent = new Date().toLocaleDateString('en-IN',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  buildNav();
+  go('dashboard');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  RENDER ENGINE + HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+const fmt = n => n==null?'—':(typeof n==='number'?n.toLocaleString('en-IN'):n);
+const fmtCr = n => n==null?'—':`₹${(n/1e7).toFixed(2)} Cr`;
+const fmtL  = n => `₹${(n/1e5).toFixed(2)} L`;
+const fmtAmt = n => {
+  if (n==null) return '—';
+  if (n>=1e7) return fmtCr(n);
+  if (n>=1e5) return fmtL(n);
+  return '₹'+n.toLocaleString('en-IN');
+};
+
+const bKyc = s => {const m={VERIFIED:'bg',PENDING:'by',EXPIRED:'br',REJECTED:'br'};return`<span class="badge ${m[s]||'bn'}">${s}</span>`;};
+const bSt = s => {const m={PROCESSED:'bg',APPROVED:'bg',DISBURSED:'bt',PENDING:'by',UNDER_REVIEW:'bb',FLAGGED:'br',FAILED:'br',REJECTED:'br',NPA:'br',OPEN:'by',RESOLVED:'bg',CLOSED:'bn',IN_PROGRESS:'bb',INVESTIGATING:'bb',FALSE_POSITIVE:'bn'};return`<span class="badge ${m[s]||'bn'}">${s.replace('_',' ')}</span>`;};
+const bSev = s => {const m={CRITICAL:'br',HIGH:'bo',MEDIUM:'by',LOW:'bb'};return`<span class="badge ${m[s]||'bn'}">${s}</span>`;};
+const rBadge = r => `<span class="rtag r${r}">${r}</span>`;
+const spark = (vals,col) => {const mx=Math.max(...vals);return`<div class="spark">${vals.map(v=>`<div class="sb" style="height:${Math.round(v/mx*100)}%;background:${col};opacity:.7"></div>`).join('')}</div>`;};
+const progressRow = (lbl,pct,col,note='') =>
+  `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${lbl}</span><span style="font-weight:600">${pct}% <span style="color:var(--muted);font-weight:400">${note}</span></span></div><div class="progress"><div class="pf" style="width:${pct}%;background:${col}"></div></div></div>`;
+
+function showToast(msg, cls='') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast on ${cls}`;
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),3200);
+}
+
+function openModal(html) { document.getElementById('mroot').innerHTML=`<div class="ov on" id="mo" onclick="if(event.target.id==='mo')closeModal()">${html}</div>`; }
+function closeModal() { document.getElementById('mroot').innerHTML=''; }
+
+function renderPage(page) {
+  const el = document.getElementById(`page-${page}`);
+  if (!el) return;
+  if (!can(page)) { el.innerHTML=`<div class="acc-den"><div class="acc-den-i">🔒</div><h3>Access Restricted</h3><p style="margin-top:8px;font-size:13px">Your role <strong>${currentSession?.role}</strong> cannot access <strong>${page}</strong>.</p></div>`; return; }
+  const renders = {dashboard:rDashboard,customers:rCustomers,transactions:rTransactions,loans:rLoans,complaints:rComplaints,risk:rRisk,fraud:rFraud,financial:rFinancial,treasury:rTreasury,branches:rBranches,reports:rReports,users:rUsers,audit:rAudit};
+  if (renders[page]) renders[page](el);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  INLINE EDIT SYSTEM — universal cell editing
+// ═══════════════════════════════════════════════════════════════════════════
+function makeEditable(el, table, id, field, type='text', options=null) {
+  if (!canDo('edit')) return;
+  el.classList.add('editable');
+  el.setAttribute('data-table',table);
+  el.setAttribute('data-id',id);
+  el.setAttribute('data-field',field);
+  el.setAttribute('data-type',type);
+  if (options) el.setAttribute('data-options',JSON.stringify(options));
+  el.onclick = function(e) {
+    e.stopPropagation();
+    startInlineEdit(this);
+  };
+}
+
+function startInlineEdit(cell) {
+  if (cell.classList.contains('editing')) return;
+  cell.classList.add('editing');
+  const val = cell.getAttribute('data-val') || cell.textContent.trim();
+  const type = cell.getAttribute('data-type');
+  const options = cell.getAttribute('data-options');
+  let input;
+  if (type === 'select' && options) {
+    const opts = JSON.parse(options);
+    input = document.createElement('select');
+    input.className = 'edit-select';
+    opts.forEach(o => {
+      const op = document.createElement('option');
+      op.value = o; op.textContent = o;
+      if (o === val) op.selected = true;
+      input.appendChild(op);
+    });
+  } else {
+    input = document.createElement('input');
+    input.className = 'edit-input';
+    input.type = type === 'number' ? 'number' : 'text';
+    input.value = val;
+  }
+  const orig = cell.innerHTML;
+  cell.innerHTML = '';
+  cell.appendChild(input);
+  input.focus();
+  if (input.select) input.select();
+  input.onkeydown = e => {
+    if (e.key === 'Enter') commitEdit(cell, input.value);
+    if (e.key === 'Escape') { cell.classList.remove('editing'); cell.innerHTML = orig; }
+  };
+  input.onblur = () => { setTimeout(()=>{ if(cell.classList.contains('editing')) commitEdit(cell, input.value); }, 150); };
+}
+
+function commitEdit(cell, newVal) {
+  if (!cell.classList.contains('editing')) return;
+  cell.classList.remove('editing');
+  const table = cell.getAttribute('data-table');
+  const id = parseInt(cell.getAttribute('data-id'));
+  const field = cell.getAttribute('data-field');
+  const type = cell.getAttribute('data-type');
+  const parsed = type==='number' ? parseFloat(newVal)||0 : newVal;
+  update(table, id, {[field]: parsed});
+  cell.setAttribute('data-val', newVal);
+  // Reformat display
+  let display = newVal;
+  if (field==='balance') display = fmtAmt(parsed);
+  else if (field==='kyc') display = bKyc(newVal);
+  else if (field==='status') display = bSt(newVal);
+  else if (field==='amount') display = fmtAmt(parsed);
+  cell.innerHTML = display;
+  // Re-enable click
+  makeEditable(cell, table, id, field, type, cell.getAttribute('data-options') ? JSON.parse(cell.getAttribute('data-options')) : null);
+  auditLog('INLINE_EDIT', table, id, `${field} → ${newVal}`);
+  showToast(`Updated ${field} ✓`, 'tg');
+  buildNav(); // refresh alert counts
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════
+function rDashboard(el) {
+  const snap = DB.financial_snapshots.find(s=>s.period==='Q3-FY25') || {};
+  const txnVol = DB.transactions.reduce((a,t)=>a+t.amount,0);
+  const openAlerts = find('fraud_alerts',a=>a.status==='OPEN').length;
+  const pendingLoans = find('loans',l=>l.status==='PENDING').length;
+  const custCount = find('customers',c=>c.active).length;
+  const recentTxns = [...DB.transactions].sort((a,b)=>b.created_at.localeCompare(a.created_at)).slice(0,8);
+  const alerts = find('fraud_alerts',a=>a.status==='OPEN').slice(0,4);
+
+  el.innerHTML = `
+  <div class="kgrid">
+    <div class="kcard kc-b"><div class="ki">🏦</div><div class="kl">Total Deposits</div><div class="kv">₹14.2L Cr</div><div class="kd up">▲ 8.3% YoY</div>${spark([95,98,105,112,122,132,142],'var(--teal)')}</div>
+    <div class="kcard kc-o"><div class="ki">📈</div><div class="kl">Total Advances</div><div class="kv">₹9.8L Cr</div><div class="kd up">▲ 12.1% YoY</div>${spark([68,74,82,90,98,106,112],'var(--gold)')}</div>
+    <div class="kcard kc-g"><div class="ki">💹</div><div class="kl">Net Profit (Q3)</div><div class="kv">₹3,441 Cr</div><div class="kd up">▲ 22.7% QoQ</div>${spark([210,248,282,301,294,319,344],'#16a34a')}</div>
+    <div class="kcard kc-r"><div class="ki">⚠️</div><div class="kl">GNPA Ratio</div><div class="kv">${snap.gnpa||4.09}%</div><div class="kd dn">▼ Improving</div>${spark([8,7.2,6.5,5.8,5.2,4.8,4.09],'var(--red)')}</div>
+  </div>
+  <div class="kgrid">
+    <div class="kcard kc-p"><div class="kl">Active Customers</div><div class="kv">${custCount}</div><div class="kd n">${currentSession.role} view</div></div>
+    <div class="kcard kc-b"><div class="kl">Transactions Today</div><div class="kv">${DB.transactions.length}</div><div class="kd n">${fmtAmt(txnVol)}</div></div>
+    <div class="kcard kc-o"><div class="kl">Pending Loans</div><div class="kv">${pendingLoans}</div><div class="kd n">Awaiting review</div></div>
+    <div class="kcard kc-r"><div class="kl">Open Fraud Alerts</div><div class="kv" style="color:${openAlerts>0?'var(--red)':'inherit'}">${openAlerts}</div><div class="kd ${openAlerts>0?'dn':'n'}">${openAlerts>0?'Action needed':'All clear'}</div></div>
+  </div>
+  <div class="g65">
+    <div class="card">
+      <div class="sec-title">Recent Transactions <span class="sec-r"><button class="btn btn-out btn-sm" onclick="go('transactions')">View All →</button></span></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Ref</th><th>Customer</th><th>Channel</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>${recentTxns.map(t=>{
+          const c=findOne('customers',c=>c.account_no===t.from_acc);
+          return`<tr>
+            <td class="mono">${t.ref}</td>
+            <td>${c?.name||t.from_acc||'—'}</td>
+            <td><span class="badge bb">${t.channel}</span></td>
+            <td style="font-weight:600">${fmtAmt(t.amount)}</td>
+            <td>${bSt(t.status)}</td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <div class="card-title">Live Alerts</div>
+        ${alerts.length ? alerts.map(a=>`<div class="alert ${a.severity==='CRITICAL'||a.severity==='HIGH'?'a-r':'a-y'}"><div><div class="at">${a.type.replace('_',' ')} · ${a.severity}</div><div style="font-size:11px">${a.desc.substring(0,55)}...</div></div></div>`).join('') : '<div class="alert a-g"><div>No open fraud alerts</div></div>'}
+        ${can('fraud')?`<button class="btn btn-out btn-sm" style="width:100%;margin-top:4px" onclick="go('fraud')">View alerts →</button>`:''}
+      </div>
+      <div class="card">
+        <div class="card-title">Q3 FY25 Ratios</div>
+        ${[['CAR',snap.car+'%','var(--green)'],['NIM',snap.nim+'%','var(--txt)'],['ROA',snap.roa+'%','var(--green)'],['ROE',snap.roe+'%','var(--txt)'],['Cost/Income',snap.ci+'%','var(--txt)']].map(([k,v,c])=>`<div class="srow"><span class="sk">${k}</span><span class="sv" style="color:${c}">${v}</span></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: CUSTOMERS
+// ═══════════════════════════════════════════════════════════════════════════
+let cPage=1, cSearch='', cType='', cKyc='';
+function rCustomers(el) {
+  let rows = [...DB.customers];
+  const role = currentSession.role;
+  if (['BM','BO','TELLER'].includes(role) && currentSession.branchId)
+    rows = rows.filter(c=>c.branch_id===currentSession.branchId);
+  if (cSearch) rows = rows.filter(c=>c.name.toLowerCase().includes(cSearch.toLowerCase())||c.account_no.includes(cSearch)||c.mobile.includes(cSearch));
+  if (cType) rows = rows.filter(c=>c.type===cType);
+  if (cKyc)  rows = rows.filter(c=>c.kyc===cKyc);
+  const perPage=12, total=rows.length, pages=Math.ceil(total/perPage)||1;
+  if(cPage>pages) cPage=pages;
+  const paged = rows.slice((cPage-1)*perPage, cPage*perPage);
+  const verCount = DB.customers.filter(c=>c.kyc==='VERIFIED').length;
+  const pendCount = DB.customers.filter(c=>c.kyc==='PENDING').length;
+  const blockedCount = DB.customers.filter(c=>!c.active).length;
+
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-b"><div class="kl">Total Customers</div><div class="kv">${DB.customers.length}</div></div>
+    <div class="kcard kc-g"><div class="kl">KYC Verified</div><div class="kv">${verCount}</div></div>
+    <div class="kcard kc-o"><div class="kl">KYC Pending</div><div class="kv">${pendCount}</div></div>
+    <div class="kcard kc-r"><div class="kl">Blocked</div><div class="kv">${blockedCount}</div></div>
+  </div>
+  <div class="card">
+    <div class="sec-title">Customer Directory
+      <div class="sec-r">
+        ${canDo('create')?`<button class="btn btn-gold btn-sm" onclick="openAddCustomer()">+ New Customer</button>`:''}
+        ${canDo('export')?`<button class="btn btn-out btn-sm" onclick="exportDB()">⬇ Export</button>`:''}
+        <span style="font-size:11px;color:var(--muted)">✏️ Click any cell to edit inline</span>
+      </div>
+    </div>
+    <div class="search-row">
+      <input class="search-input" placeholder="Search name, account, mobile..." value="${cSearch}" oninput="cSearch=this.value;cPage=1;rCustomers(document.getElementById('page-customers'))">
+      <select class="fi fsel" style="width:120px" onchange="cType=this.value;cPage=1;rCustomers(document.getElementById('page-customers'))">
+        <option value="">All Types</option>${['SAVINGS','CURRENT','NRI','FD'].map(t=>`<option ${cType===t?'selected':''}>${t}</option>`).join('')}
+      </select>
+      <select class="fi fsel" style="width:110px" onchange="cKyc=this.value;cPage=1;rCustomers(document.getElementById('page-customers'))">
+        <option value="">All KYC</option>${['VERIFIED','PENDING','EXPIRED'].map(t=>`<option ${cKyc===t?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Account No.</th><th>Name</th><th>Type</th><th>Mobile</th><th>Balance</th><th>Branch</th><th>KYC</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="cust-tbody">
+      ${paged.map(c=>{
+        const br = findOne('branches',b=>b.id===c.branch_id);
+        return `<tr data-id="${c.id}">
+          <td class="mono">${c.account_no}</td>
+          <td><span id="ec-name-${c.id}" data-val="${c.name}">${c.name}</span></td>
+          <td>${c.type}</td>
+          <td><span id="ec-mob-${c.id}" data-val="${c.mobile}">${c.mobile}</span></td>
+          <td><span id="ec-bal-${c.id}" data-val="${c.balance}">${fmtAmt(c.balance)}</span></td>
+          <td>${br?.name||'—'}</td>
+          <td><span id="ec-kyc-${c.id}" data-val="${c.kyc}">${bKyc(c.kyc)}</span></td>
+          <td><span id="ec-act-${c.id}">${c.active?'<span class="badge bg">Active</span>':'<span class="badge br">Blocked</span>'}</span></td>
+          <td style="white-space:nowrap">
+            <button class="btn btn-ghost btn-xs" onclick="viewCustomer(${c.id})">👁 View</button>
+            ${canDo('delete')&&c.active?`<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="blockCustomer(${c.id})">🚫 Block</button>`:canDo('edit')&&!c.active?`<button class="btn btn-ghost btn-xs" style="color:var(--green)" onclick="unblockCustomer(${c.id})">✅ Unblock</button>`:''}
+            ${canDo('delete')?`<button class="btn btn-ghost btn-xs" style="color:#dc2626" onclick="delCustomer(${c.id})">🗑</button>`:''}
+          </td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+    <div class="pag">
+      <span>Showing ${paged.length} of ${total} customers</span>
+      <div class="pag-btns">
+        <button class="btn btn-out btn-xs" ${cPage<=1?'disabled':''} onclick="cPage--;rCustomers(document.getElementById('page-customers'))">← Prev</button>
+        <span style="padding:2px 8px;font-size:11px">${cPage}/${pages}</span>
+        <button class="btn btn-out btn-xs" ${cPage>=pages?'disabled':''} onclick="cPage++;rCustomers(document.getElementById('page-customers'))">Next →</button>
+      </div>
+    </div>
+  </div>`;
+
+  // Attach inline edit after DOM render
+  if (canDo('edit')) {
+    paged.forEach(c=>{
+      const nEl=document.getElementById(`ec-name-${c.id}`);
+      const mEl=document.getElementById(`ec-mob-${c.id}`);
+      const bEl=document.getElementById(`ec-bal-${c.id}`);
+      const kEl=document.getElementById(`ec-kyc-${c.id}`);
+      if(nEl) makeEditable(nEl,'customers',c.id,'name','text');
+      if(mEl) makeEditable(mEl,'customers',c.id,'mobile','text');
+      if(bEl) makeEditable(bEl,'customers',c.id,'balance','number');
+      if(kEl) makeEditable(kEl,'customers',c.id,'kyc','select',['VERIFIED','PENDING','EXPIRED','REJECTED']);
+    });
+  }
+}
+
+function openAddCustomer() {
+  const branches = DB.branches;
+  openModal(`<div class="modal">
+    <div class="modal-t">Add New Customer <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Full Name *</label><input class="fi" id="nc-name" placeholder="As per Aadhaar"></div>
+      <div class="fg"><label class="fl">Mobile *</label><input class="fi" id="nc-mob" placeholder="10-digit number"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Account Type *</label><select class="fi fsel" id="nc-type"><option>SAVINGS</option><option>CURRENT</option><option>NRI</option><option>FD</option></select></div>
+      <div class="fg"><label class="fl">Branch</label><select class="fi fsel" id="nc-branch">${branches.map(b=>`<option value="${b.id}" ${b.id===currentSession.branchId?'selected':''}>${b.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Aadhaar</label><input class="fi" id="nc-aadh" placeholder="XXXX-XXXX-XXXX"></div>
+      <div class="fg"><label class="fl">PAN</label><input class="fi" id="nc-pan" placeholder="ABCDE1234F" style="text-transform:uppercase"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="nc-email" type="email"></div>
+      <div class="fg"><label class="fl">Date of Birth</label><input class="fi" id="nc-dob" type="date"></div>
+    </div>
+    <div class="fg"><label class="fl">Address</label><input class="fi" id="nc-addr" placeholder="Full address"></div>
+    <div id="nc-err" class="ferr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveCustomer()">Create Account</button>
+    </div>
+  </div>`);
+}
+
+function saveCustomer() {
+  const name=document.getElementById('nc-name').value.trim();
+  const mob=document.getElementById('nc-mob').value.trim();
+  if(!name||!mob){document.getElementById('nc-err').textContent='Name and mobile required.';return;}
+  const last = DB.customers.reduce((mx,c)=>Math.max(mx, parseInt(c.account_no.replace('PNB',''))||0),0);
+  const accNo = 'PNB'+String(last+1).padStart(13,'0');
+  const c = insert('customers',{
+    account_no:accNo,name,email:document.getElementById('nc-email').value,
+    mobile:mob,aadhaar:document.getElementById('nc-aadh').value,
+    pan:document.getElementById('nc-pan').value.toUpperCase(),
+    dob:document.getElementById('nc-dob').value,
+    address:document.getElementById('nc-addr').value,
+    kyc:'PENDING',type:document.getElementById('nc-type').value,
+    balance:0,branch_id:parseInt(document.getElementById('nc-branch').value)||currentSession.branchId||1,
+    active:1,created_by:currentSession.id
+  });
+  auditLog('CREATE_CUSTOMER','customers',c.id,`Created ${name} (${accNo})`);
+  closeModal(); showToast(`Account ${accNo} created ✓`,'tg');
+  renderPage('customers');
+}
+
+function viewCustomer(id) {
+  const c = findOne('customers',c=>c.id===id);
+  const txns = find('transactions',t=>t.from_acc===c.account_no).slice(0,5);
+  const loans = find('loans',l=>l.customer_id===id);
+  const br = findOne('branches',b=>b.id===c.branch_id);
+  openModal(`<div class="modal modal-lg">
+    <div class="modal-t">Customer Profile — ${c.name} <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="g2">
+      <div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--navy);color:var(--gold2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">${c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()}</div>
+          <div><div style="font-size:16px;font-weight:700">${c.name}</div><div class="mono" style="font-size:11px;color:var(--muted)">${c.account_no}</div></div>
+        </div>
+        <div class="srow"><span class="sk">Account Type</span><span class="badge bb">${c.type}</span></div>
+        <div class="srow"><span class="sk">Balance</span><span class="sv" style="font-size:16px;color:var(--navy)">${fmtAmt(c.balance)}</span></div>
+        <div class="srow"><span class="sk">KYC</span><span>${bKyc(c.kyc)}</span></div>
+        <div class="srow"><span class="sk">Status</span><span>${c.active?'<span class="badge bg">Active</span>':'<span class="badge br">Blocked</span>'}</span></div>
+        <div class="srow"><span class="sk">Branch</span><span class="sv">${br?.name||'—'}</span></div>
+      </div>
+      <div>
+        <div class="srow"><span class="sk">Mobile</span><span class="sv">${c.mobile}</span></div>
+        <div class="srow"><span class="sk">Email</span><span class="sv">${c.email||'—'}</span></div>
+        <div class="srow"><span class="sk">PAN</span><span class="mono">${c.pan||'—'}</span></div>
+        <div class="srow"><span class="sk">Aadhaar</span><span class="mono">${c.aadhaar?c.aadhaar.substring(0,4)+'XXXXXXXX':'—'}</span></div>
+        <div class="srow"><span class="sk">DOB</span><span>${c.dob||'—'}</span></div>
+        <div class="srow"><span class="sk">Address</span><span style="font-size:12px">${c.address||'—'}</span></div>
+      </div>
+    </div>
+    ${txns.length?`<div style="margin-top:12px"><div class="card-title">Last 5 Transactions</div><table><thead><tr><th>Ref</th><th>Channel</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>${txns.map(t=>`<tr><td class="mono" style="font-size:11px">${t.ref}</td><td>${t.channel}</td><td style="font-weight:600">${fmtAmt(t.amount)}</td><td>${bSt(t.status)}</td><td style="font-size:11px;color:var(--muted)">${t.created_at?.substring(0,16)}</td></tr>`).join('')}</tbody></table></div>`:''}
+    ${loans.length?`<div style="margin-top:12px"><div class="card-title">Loans</div><table><thead><tr><th>Loan ID</th><th>Type</th><th>Principal</th><th>Status</th></tr></thead><tbody>${loans.map(l=>`<tr><td class="mono">${l.loan_id}</td><td>${l.type}</td><td>${fmtAmt(l.principal)}</td><td>${bSt(l.status)}</td></tr>`).join('')}</tbody></table></div>`:''}
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeModal()">Close</button>
+      ${canDo('edit')?`<button class="btn btn-navy" onclick="closeModal();editCustomer(${id})">✏️ Edit</button>`:''}
+      ${canDo('block')&&c.active?`<button class="btn btn-red" onclick="closeModal();blockCustomer(${id})">Block Account</button>`:''}
+    </div>
+  </div>`);
+  auditLog('VIEW_CUSTOMER','customers',id,`Viewed ${c.name}`);
+}
+
+function editCustomer(id) {
+  const c = findOne('customers',c=>c.id===id);
+  const branches = DB.branches;
+  openModal(`<div class="modal">
+    <div class="modal-t">Edit Customer — ${c.name} <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Full Name</label><input class="fi" id="ec-n" value="${c.name}"></div>
+      <div class="fg"><label class="fl">Mobile</label><input class="fi" id="ec-m" value="${c.mobile}"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="ec-e" value="${c.email||''}"></div>
+      <div class="fg"><label class="fl">KYC Status</label><select class="fi fsel" id="ec-k"><option ${c.kyc==='VERIFIED'?'selected':''}>VERIFIED</option><option ${c.kyc==='PENDING'?'selected':''}>PENDING</option><option ${c.kyc==='EXPIRED'?'selected':''}>EXPIRED</option><option ${c.kyc==='REJECTED'?'selected':''}>REJECTED</option></select></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Account Type</label><select class="fi fsel" id="ec-t"><option ${c.type==='SAVINGS'?'selected':''}>SAVINGS</option><option ${c.type==='CURRENT'?'selected':''}>CURRENT</option><option ${c.type==='NRI'?'selected':''}>NRI</option><option ${c.type==='FD'?'selected':''}>FD</option></select></div>
+      <div class="fg"><label class="fl">Branch</label><select class="fi fsel" id="ec-b">${branches.map(b=>`<option value="${b.id}" ${b.id===c.branch_id?'selected':''}>${b.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="fg"><label class="fl">Address</label><input class="fi" id="ec-a" value="${c.address||''}"></div>
+    <div class="fg"><label class="fl">Balance (₹)</label><input class="fi" id="ec-bal" type="number" value="${c.balance}"></div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-navy" onclick="saveEditCustomer(${id})">Save Changes</button>
+    </div>
+  </div>`);
+}
+
+function saveEditCustomer(id) {
+  update('customers',id,{
+    name:document.getElementById('ec-n').value.trim(),
+    mobile:document.getElementById('ec-m').value.trim(),
+    email:document.getElementById('ec-e').value.trim(),
+    kyc:document.getElementById('ec-k').value,
+    type:document.getElementById('ec-t').value,
+    branch_id:parseInt(document.getElementById('ec-b').value),
+    address:document.getElementById('ec-a').value.trim(),
+    balance:parseFloat(document.getElementById('ec-bal').value)||0,
+  });
+  auditLog('EDIT_CUSTOMER','customers',id,'Full edit saved');
+  closeModal(); showToast('Customer updated ✓','tg'); renderPage('customers');
+}
+
+function blockCustomer(id) {
+  const c=findOne('customers',c=>c.id===id);
+  if(!confirm(`Block account for ${c.name}? All transactions will be suspended.`)) return;
+  update('customers',id,{active:0});
+  auditLog('BLOCK_CUSTOMER','customers',id,`Blocked ${c.name}`);
+  closeModal(); showToast(`${c.name} account blocked`,'tr'); renderPage('customers');
+}
+
+function unblockCustomer(id) {
+  const c=findOne('customers',c=>c.id===id);
+  update('customers',id,{active:1});
+  auditLog('UNBLOCK_CUSTOMER','customers',id,`Unblocked ${c.name}`);
+  showToast(`${c.name} account unblocked`,'tg'); renderPage('customers');
+}
+
+function delCustomer(id) {
+  const c=findOne('customers',c=>c.id===id);
+  if(!confirm(`PERMANENTLY DELETE ${c.name}? This cannot be undone.`)) return;
+  remove('customers',id);
+  auditLog('DELETE_CUSTOMER','customers',id,`Deleted ${c.name}`);
+  showToast(`Customer deleted`,'tr'); renderPage('customers');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: TRANSACTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+let tPage=1,tCh='',tSt='';
+function rTransactions(el) {
+  let rows=[...DB.transactions];
+  const role=currentSession.role;
+  if(['BM','BO','TELLER'].includes(role)&&currentSession.branchId) rows=rows.filter(t=>t.branch_id===currentSession.branchId);
+  if(tCh) rows=rows.filter(t=>t.channel===tCh);
+  if(tSt) rows=rows.filter(t=>t.status===tSt);
+  rows.sort((a,b)=>b.created_at.localeCompare(a.created_at));
+  const perPage=12,total=rows.length,pages=Math.ceil(total/perPage)||1;
+  if(tPage>pages)tPage=pages;
+  const paged=rows.slice((tPage-1)*perPage,tPage*perPage);
+  const chSum={};
+  DB.transactions.forEach(t=>{if(!chSum[t.channel])chSum[t.channel]={cnt:0,vol:0};chSum[t.channel].cnt++;chSum[t.channel].vol+=t.amount;});
+
+  el.innerHTML=`
+  <div class="kgrid">
+    ${Object.entries(chSum).slice(0,4).map(([ch,d],i)=>`<div class="kcard ${['kc-b','kc-o','kc-g','kc-p'][i]}"><div class="kl">${ch}</div><div class="kv">${d.cnt}</div><div class="kd n">${fmtAmt(d.vol)}</div></div>`).join('')}
+  </div>
+  <div class="card">
+    <div class="sec-title">Transaction Ledger
+      <div class="sec-r">
+        <select class="fi fsel btn-sm" style="width:110px" onchange="tCh=this.value;tPage=1;rTransactions(document.getElementById('page-transactions'))">
+          <option value="">All Channels</option>${['UPI','NEFT','RTGS','IMPS','ATM','BRANCH'].map(c=>`<option ${tCh===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <select class="fi fsel btn-sm" style="width:110px" onchange="tSt=this.value;tPage=1;rTransactions(document.getElementById('page-transactions'))">
+          <option value="">All Status</option>${['PROCESSED','PENDING','FAILED','FLAGGED'].map(s=>`<option ${tSt===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+        ${canDo('create')?`<button class="btn btn-gold btn-sm" onclick="openNewTxn()">+ New Transaction</button>`:''}
+        <span style="font-size:11px;color:var(--muted)">✏️ Click status/desc to edit</span>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Timestamp</th><th>Ref</th><th>Account / Name</th><th>Channel</th><th>Amount</th><th>Fraud Score</th><th>Status</th><th>Description</th><th>Actions</th></tr></thead>
+      <tbody>${paged.map(t=>{
+        const c=findOne('customers',c=>c.account_no===t.from_acc);
+        const br=findOne('branches',b=>b.id===t.branch_id);
+        return`<tr>
+          <td style="font-size:11px;color:var(--muted)">${t.created_at?.substring(0,16)}</td>
+          <td class="mono">${t.ref}</td>
+          <td><div style="font-weight:500">${c?.name||'—'}</div><div class="mono" style="font-size:10px;color:var(--muted)">${t.from_acc}</div></td>
+          <td><span class="badge bb">${t.channel}</span></td>
+          <td style="font-weight:600">${fmtAmt(t.amount)}</td>
+          <td><span style="font-weight:600;color:${t.fraud_score>0.7?'var(--red)':t.fraud_score>0.3?'var(--gold)':'var(--green)'}">${(t.fraud_score*100).toFixed(1)}%</span></td>
+          <td><span id="et-st-${t.id}" data-val="${t.status}">${bSt(t.status)}</span></td>
+          <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis"><span id="et-desc-${t.id}" data-val="${t.desc||''}">${t.desc||'—'}</span></td>
+          <td>${canDo('delete')?`<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="delTxn(${t.id})">🗑</button>`:''}
+          </td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+    <div class="pag"><span>Showing ${paged.length} of ${total}</span>
+      <div class="pag-btns">
+        <button class="btn btn-out btn-xs" ${tPage<=1?'disabled':''} onclick="tPage--;rTransactions(document.getElementById('page-transactions'))">← Prev</button>
+        <span style="padding:2px 8px;font-size:11px">${tPage}/${pages}</span>
+        <button class="btn btn-out btn-xs" ${tPage>=pages?'disabled':''} onclick="tPage++;rTransactions(document.getElementById('page-transactions'))">Next →</button>
+      </div>
+    </div>
+  </div>`;
+
+  if(canDo('edit')) {
+    paged.forEach(t=>{
+      const stEl=document.getElementById(`et-st-${t.id}`);
+      const dEl=document.getElementById(`et-desc-${t.id}`);
+      if(stEl) makeEditable(stEl,'transactions',t.id,'status','select',['PROCESSED','PENDING','FAILED','FLAGGED','REVERSED']);
+      if(dEl) makeEditable(dEl,'transactions',t.id,'desc','text');
+    });
+  }
+}
+
+function openNewTxn() {
+  const custs=DB.customers.filter(c=>c.active);
+  openModal(`<div class="modal">
+    <div class="modal-t">New Transaction <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fg"><label class="fl">From Account *</label>
+      <select class="fi fsel" id="nt-from" onchange="document.getElementById('nt-bal').textContent='Balance: '+formatBalance(this)">
+        <option value="">-- Select Account --</option>
+        ${custs.map(c=>`<option value="${c.account_no}" data-bal="${c.balance}">${c.account_no} — ${c.name} (${fmtAmt(c.balance)})</option>`).join('')}
+      </select>
+    </div>
+    <div id="nt-bal" style="font-size:11px;color:var(--muted);margin:-6px 0 10px;padding-left:2px"></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Type *</label><select class="fi fsel" id="nt-type"><option>CREDIT</option><option>DEBIT</option><option selected>NEFT</option><option>RTGS</option><option>IMPS</option><option>UPI</option><option>ATM</option></select></div>
+      <div class="fg"><label class="fl">Amount (₹) *</label><input class="fi" id="nt-amt" type="number" min="1" placeholder="e.g. 50000"></div>
+    </div>
+    <div class="fg"><label class="fl">To Account / Beneficiary</label><input class="fi" id="nt-to" placeholder="Beneficiary account (optional)"></div>
+    <div class="fg"><label class="fl">Description / Narration</label><input class="fi" id="nt-desc" placeholder="Remarks"></div>
+    <div id="nt-err" class="ferr"></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-gold" onclick="postTxn()">Post Transaction</button></div>
+  </div>`);
+}
+
+function formatBalance(sel) {
+  const opt=sel.options[sel.selectedIndex];
+  return opt.value ? fmtAmt(parseFloat(opt.getAttribute('data-bal'))) : '';
+}
+
+function postTxn() {
+  const from=document.getElementById('nt-from').value;
+  const type=document.getElementById('nt-type').value;
+  const amt=parseFloat(document.getElementById('nt-amt').value)||0;
+  const to=document.getElementById('nt-to').value;
+  const desc=document.getElementById('nt-desc').value;
+  const err=document.getElementById('nt-err');
+  if(!from){err.textContent='Select an account.';return;}
+  if(amt<=0){err.textContent='Enter a valid amount.';return;}
+  const cust=findOne('customers',c=>c.account_no===from&&c.active);
+  if(!cust){err.textContent='Account not found or blocked.';return;}
+  const isDebit=['DEBIT','NEFT','RTGS','IMPS','UPI','ATM','TRANSFER'].includes(type);
+  if(isDebit&&cust.balance<amt){err.textContent=`Insufficient balance. Available: ${fmtAmt(cust.balance)}`;return;}
+  // Fraud scoring
+  const fraudScore=Math.min(0.99,amt/100000000*0.4+0.01+(type==='UPI'&&amt>200000?0.4:0)+(amt>cust.balance*2?0.3:0));
+  const status=fraudScore>0.7?'FLAGGED':'PROCESSED';
+  const newBal=isDebit?cust.balance-amt:cust.balance+amt;
+  const ref='TXN'+Date.now();
+  const txn=insert('transactions',{ref,from_acc:from,to_acc:to||null,type,channel:type,amount:amt,bal_after:newBal,desc,status,branch_id:currentSession.branchId||1,by:currentSession.id,fraud_score:parseFloat(fraudScore.toFixed(3))});
+  update('customers',cust.id,{balance:newBal});
+  if(fraudScore>0.7) {
+    insert('fraud_alerts',{ref:'ALERT-'+Date.now()%100000,account_no:from,txn_ref:ref,type:'UNUSUAL_AMOUNT',severity:fraudScore>0.9?'HIGH':'MEDIUM',confidence:parseFloat((fraudScore*100).toFixed(1)),desc:`High value ${type} ₹${amt.toLocaleString('en-IN')}`,status:'OPEN',resolved_by:null});
+    showToast(`⚠️ Transaction FLAGGED — fraud score ${(fraudScore*100).toFixed(0)}%`,'to');
+  } else {
+    showToast(`Transaction ${ref} — ${status} ✓`,status==='PROCESSED'?'tg':'to');
+  }
+  auditLog('POST_TXN','transactions',txn.id,`${type} ₹${amt} from ${from} → ${status}`);
+  closeModal(); renderPage('transactions'); buildNav();
+}
+
+function delTxn(id) {
+  if(!confirm('Delete this transaction?')) return;
+  const t=findOne('transactions',t=>t.id===id);
+  remove('transactions',id);
+  auditLog('DELETE_TXN','transactions',id,`Deleted ${t?.ref}`);
+  showToast('Transaction deleted','tr'); renderPage('transactions');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: LOANS
+// ═══════════════════════════════════════════════════════════════════════════
+let lPage=1,lSt='',lType='';
+function rLoans(el) {
+  let rows=[...DB.loans];
+  const role=currentSession.role;
+  if(['BM','BO'].includes(role)&&currentSession.branchId) rows=rows.filter(l=>l.branch_id===currentSession.branchId);
+  if(lSt) rows=rows.filter(l=>l.status===lSt);
+  if(lType) rows=rows.filter(l=>l.type===lType);
+  rows.sort((a,b)=>b.applied_at.localeCompare(a.applied_at));
+  const perPage=10,total=rows.length,pages=Math.ceil(total/perPage)||1;
+  if(lPage>pages)lPage=pages;
+  const paged=rows.slice((lPage-1)*perPage,lPage*perPage);
+  const stats={};
+  DB.loans.forEach(l=>{if(!stats[l.status])stats[l.status]={cnt:0,amt:0};stats[l.status].cnt++;stats[l.status].amt+=l.principal;});
+
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-b"><div class="kl">Loan Book</div><div class="kv">₹9.8L Cr</div><div class="kd up">▲ 12.1% YoY</div></div>
+    <div class="kcard kc-o"><div class="kl">Pending Review</div><div class="kv">${stats['PENDING']?.cnt||0}</div></div>
+    <div class="kcard kc-g"><div class="kl">Disbursed</div><div class="kv">${stats['DISBURSED']?.cnt||0}</div></div>
+    <div class="kcard kc-r"><div class="kl">NPA Accounts</div><div class="kv">${stats['NPA']?.cnt||0}</div></div>
+  </div>
+  <div class="g70">
+    <div class="card">
+      <div class="sec-title">Loan Applications
+        <div class="sec-r">
+          <select class="fi fsel btn-sm" style="width:125px" onchange="lSt=this.value;lPage=1;rLoans(document.getElementById('page-loans'))">
+            <option value="">All Status</option>${['PENDING','UNDER_REVIEW','APPROVED','DISBURSED','REJECTED','NPA','CLOSED'].map(s=>`<option ${lSt===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+          <select class="fi fsel btn-sm" style="width:110px" onchange="lType=this.value;lPage=1;rLoans(document.getElementById('page-loans'))">
+            <option value="">All Types</option>${['HOME','PERSONAL','CAR','EDUCATION','KISAN','MSME','CORPORATE','PROJECT'].map(t=>`<option ${lType===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+          ${canDo('create')?`<button class="btn btn-gold btn-sm" onclick="openNewLoan()">+ Apply Loan</button>`:''}
+          <span style="font-size:11px;color:var(--muted)">✏️ Click status/rate to edit</span>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Loan ID</th><th>Customer</th><th>Type</th><th>Principal</th><th>EMI</th><th>Rate</th><th>CIBIL</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${paged.map(l=>{
+          const c=findOne('customers',c=>c.id===l.customer_id);
+          return`<tr>
+            <td class="mono">${l.loan_id}</td>
+            <td><div style="font-weight:500">${c?.name||'—'}</div><div class="mono" style="font-size:10px;color:var(--muted)">${c?.account_no||''}</div></td>
+            <td><span class="badge bb">${l.type}</span></td>
+            <td style="font-weight:600">${fmtAmt(l.principal)}</td>
+            <td>${l.emi?fmtAmt(l.emi):'—'}</td>
+            <td><span id="el-rate-${l.id}" data-val="${l.rate}">${l.rate}%</span></td>
+            <td><span style="font-weight:600;color:${l.cibil>=750?'var(--green)':l.cibil>=650?'var(--gold)':'var(--red)'}">${l.cibil||'—'}</span></td>
+            <td><span id="el-st-${l.id}" data-val="${l.status}">${bSt(l.status)}</span></td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-ghost btn-xs" onclick="viewLoan('${l.loan_id}')">👁</button>
+              ${canDo('approve')&&l.status==='PENDING'?`<button class="btn btn-green btn-xs" onclick="loanAction('${l.loan_id}','APPROVED')">✓ Approve</button><button class="btn btn-red btn-xs" onclick="loanAction('${l.loan_id}','REJECTED')">✗ Reject</button>`:''}
+              ${canDo('approve')&&l.status==='APPROVED'?`<button class="btn btn-teal btn-xs" onclick="loanAction('${l.loan_id}','DISBURSED')">Disburse</button>`:''}
+              ${canDo('delete')?`<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="delLoan('${l.loan_id}')">🗑</button>`:''}
+            </td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table></div>
+      <div class="pag"><span>Showing ${paged.length} of ${total}</span>
+        <div class="pag-btns">
+          <button class="btn btn-out btn-xs" ${lPage<=1?'disabled':''} onclick="lPage--;rLoans(document.getElementById('page-loans'))">← Prev</button>
+          <span style="padding:2px 8px;font-size:11px">${lPage}/${pages}</span>
+          <button class="btn btn-out btn-xs" ${lPage>=pages?'disabled':''} onclick="lPage++;rLoans(document.getElementById('page-loans'))">Next →</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <div class="card-title">Interest Rates</div>
+        ${[['HOME','8.50'],['PERSONAL','11.50'],['CAR','9.20'],['EDUCATION','8.80'],['KISAN','7.00'],['MSME','10.50']].map(([t,r])=>`<div class="srow"><span class="sk">${t}</span><span class="sv">${r}% p.a.</span></div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">Portfolio Summary</div>
+        ${Object.entries(stats).map(([s,d])=>`<div class="srow"><span>${bSt(s)}</span><span style="font-size:12px;font-weight:600">${d.cnt} · ${fmtAmt(d.amt)}</span></div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  if(canDo('edit')) {
+    paged.forEach(l=>{
+      const rEl=document.getElementById(`el-rate-${l.id}`);
+      const sEl=document.getElementById(`el-st-${l.id}`);
+      if(rEl) makeEditable(rEl,'loans',l.id,'rate','number');
+      if(sEl&&['CMD','ED','GM','DGM'].includes(currentSession.role)) makeEditable(sEl,'loans',l.id,'status','select',['PENDING','UNDER_REVIEW','APPROVED','DISBURSED','REJECTED','NPA','CLOSED']);
+    });
+  }
+}
+
+function calcEMI(p,r,n) { const rm=r/1200; return p*rm*Math.pow(1+rm,n)/(Math.pow(1+rm,n)-1); }
+
+function openNewLoan() {
+  const custs=DB.customers.filter(c=>c.active);
+  const branches=DB.branches;
+  openModal(`<div class="modal">
+    <div class="modal-t">New Loan Application <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Customer *</label><select class="fi fsel" id="nl-c"><option value="">-- Select --</option>${custs.map(c=>`<option value="${c.id}">${c.account_no} — ${c.name}</option>`).join('')}</select></div>
+      <div class="fg"><label class="fl">Loan Type *</label><select class="fi fsel" id="nl-t"><option>HOME</option><option>PERSONAL</option><option>CAR</option><option>EDUCATION</option><option>KISAN</option><option>MSME</option><option>CORPORATE</option><option>PROJECT</option></select></div>
+    </div>
+    <div class="fr3">
+      <div class="fg"><label class="fl">Principal (₹) *</label><input class="fi" id="nl-p" type="number" oninput="updateEMI()" placeholder="e.g. 1000000"></div>
+      <div class="fg"><label class="fl">Rate (% p.a.) *</label><input class="fi" id="nl-r" type="number" step="0.1" oninput="updateEMI()" placeholder="e.g. 8.5"></div>
+      <div class="fg"><label class="fl">Tenure (months) *</label><input class="fi" id="nl-n" type="number" oninput="updateEMI()" placeholder="e.g. 240"></div>
+    </div>
+    <div id="nl-emi" style="background:var(--off);border:1px solid var(--border);border-radius:7px;padding:11px;font-size:13px;margin-bottom:10px;display:none">
+      Calculated EMI: <strong id="nl-emi-v" style="font-size:16px;color:var(--navy)"></strong>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">CIBIL Score</label><input class="fi" id="nl-cib" type="number" min="300" max="900" placeholder="300–900"></div>
+      <div class="fg"><label class="fl">Collateral</label><input class="fi" id="nl-col" placeholder="Property / vehicle / stock"></div>
+    </div>
+    <div class="fg"><label class="fl">Branch</label><select class="fi fsel" id="nl-br">${branches.map(b=>`<option value="${b.id}" ${b.id===currentSession.branchId?'selected':''}>${b.name}</option>`).join('')}</select></div>
+    <div id="nl-err" class="ferr"></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-gold" onclick="saveLoan()">Submit Application</button></div>
+  </div>`);
+}
+
+function updateEMI() {
+  const p=parseFloat(document.getElementById('nl-p')?.value)||0;
+  const r=parseFloat(document.getElementById('nl-r')?.value)||0;
+  const n=parseInt(document.getElementById('nl-n')?.value)||0;
+  const d=document.getElementById('nl-emi');
+  if(p>0&&r>0&&n>0){document.getElementById('nl-emi-v').textContent=fmtAmt(Math.round(calcEMI(p,r,n)));d.style.display='block';}
+  else if(d) d.style.display='none';
+}
+
+function saveLoan() {
+  const cid=document.getElementById('nl-c').value;
+  const type=document.getElementById('nl-t').value;
+  const p=parseFloat(document.getElementById('nl-p').value)||0;
+  const r=parseFloat(document.getElementById('nl-r').value)||0;
+  const n=parseInt(document.getElementById('nl-n').value)||0;
+  const err=document.getElementById('nl-err');
+  if(!cid||!p||!r||!n){err.textContent='Customer, principal, rate and tenure are required.';return;}
+  const emi=Math.round(calcEMI(p,r,n));
+  const loanId='LN'+new Date().getFullYear()+'-'+String(DB.loans.length+1).padStart(4,'0');
+  const loan=insert('loans',{loan_id:loanId,customer_id:parseInt(cid),type,principal:p,rate:r,tenure:n,emi,outstanding:p,cibil:parseInt(document.getElementById('nl-cib').value)||0,status:'PENDING',npa_days:0,collateral:document.getElementById('nl-col').value,applied_by:currentSession.id,approved_by:null,branch_id:parseInt(document.getElementById('nl-br').value)||currentSession.branchId||1,applied_at:now().substring(0,10),approved_at:null});
+  auditLog('CREATE_LOAN','loans',loan.id,`${type} ₹${p} for customer ${cid}`);
+  closeModal(); showToast(`Loan ${loanId} submitted ✓`,'tg'); renderPage('loans');
+}
+
+function loanAction(loanId,status) {
+  const canApprove=['CMD','ED','GM','DGM','RM','BM'];
+  if(['APPROVED','REJECTED','DISBURSED'].includes(status)&&!canApprove.includes(currentSession.role)){showToast('Insufficient authority','tr');return;}
+  const l=findOne('loans',l=>l.loan_id===loanId);
+  if(!l) return;
+  const patch={status};
+  if(status==='APPROVED') patch.approved_by=currentSession.id, patch.approved_at=now().substring(0,10);
+  if(status==='DISBURSED') patch.disbursed_at=now().substring(0,10);
+  update('loans',l.id,patch);
+  auditLog(`LOAN_${status}`,'loans',l.id,`${status} by ${currentSession.empId}`);
+  showToast(`Loan ${loanId} ${status.toLowerCase()} ✓`,status==='REJECTED'?'tr':'tg');
+  renderPage('loans');
+}
+
+function viewLoan(loanId) {
+  const l=findOne('loans',l=>l.loan_id===loanId);
+  const c=findOne('customers',c=>c.id===l.customer_id);
+  const br=findOne('branches',b=>b.id===l.branch_id);
+  openModal(`<div class="modal modal-lg">
+    <div class="modal-t">Loan — ${l.loan_id} <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="g2">
+      <div>
+        <div class="srow"><span class="sk">Customer</span><span class="sv">${c?.name||'—'}</span></div>
+        <div class="srow"><span class="sk">Account</span><span class="mono">${c?.account_no||'—'}</span></div>
+        <div class="srow"><span class="sk">Loan Type</span><span class="badge bb">${l.type}</span></div>
+        <div class="srow"><span class="sk">Principal</span><span class="sv" style="font-size:16px">${fmtAmt(l.principal)}</span></div>
+        <div class="srow"><span class="sk">Outstanding</span><span class="sv">${fmtAmt(l.outstanding)}</span></div>
+        <div class="srow"><span class="sk">EMI / Month</span><span class="sv">${l.emi?fmtAmt(l.emi):'—'}</span></div>
+      </div>
+      <div>
+        <div class="srow"><span class="sk">Rate</span><span class="sv">${l.rate}% p.a.</span></div>
+        <div class="srow"><span class="sk">Tenure</span><span class="sv">${l.tenure} months</span></div>
+        <div class="srow"><span class="sk">CIBIL</span><span style="font-weight:600;color:${l.cibil>=750?'var(--green)':l.cibil>=650?'var(--gold)':'var(--red)'}">${l.cibil||'—'}</span></div>
+        <div class="srow"><span class="sk">NPA Days</span><span class="sv" style="color:${l.npa_days>0?'var(--red)':'inherit'}">${l.npa_days||0}</span></div>
+        <div class="srow"><span class="sk">Status</span><span>${bSt(l.status)}</span></div>
+        <div class="srow"><span class="sk">Branch</span><span>${br?.name||'—'}</span></div>
+        <div class="srow"><span class="sk">Applied</span><span>${l.applied_at||'—'}</span></div>
+        ${l.approved_at?`<div class="srow"><span class="sk">Approved</span><span>${l.approved_at}</span></div>`:''}
+        ${l.collateral?`<div class="srow"><span class="sk">Collateral</span><span>${l.collateral}</span></div>`:''}
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeModal()">Close</button>
+      ${canDo('edit')?`<button class="btn btn-navy" onclick="closeModal();editLoan('${l.loan_id}')">✏️ Edit</button>`:''}
+      ${canDo('approve')&&l.status==='PENDING'?`<button class="btn btn-red" onclick="closeModal();loanAction('${l.loan_id}','REJECTED')">Reject</button><button class="btn btn-green" onclick="closeModal();loanAction('${l.loan_id}','APPROVED')">Approve</button>`:''}
+      ${canDo('approve')&&l.status==='APPROVED'?`<button class="btn btn-teal" onclick="closeModal();loanAction('${l.loan_id}','DISBURSED')">Mark Disbursed</button>`:''}
+    </div>
+  </div>`);
+}
+
+function editLoan(loanId) {
+  const l=findOne('loans',l=>l.loan_id===loanId);
+  openModal(`<div class="modal">
+    <div class="modal-t">Edit Loan — ${loanId} <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Interest Rate (%)</label><input class="fi" id="el-r" type="number" step="0.1" value="${l.rate}"></div>
+      <div class="fg"><label class="fl">CIBIL Score</label><input class="fi" id="el-c" type="number" value="${l.cibil}"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">NPA Days</label><input class="fi" id="el-n" type="number" value="${l.npa_days}"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fi fsel" id="el-s"><option ${l.status==='PENDING'?'selected':''}>PENDING</option><option ${l.status==='UNDER_REVIEW'?'selected':''}>UNDER_REVIEW</option><option ${l.status==='APPROVED'?'selected':''}>APPROVED</option><option ${l.status==='DISBURSED'?'selected':''}>DISBURSED</option><option ${l.status==='REJECTED'?'selected':''}>REJECTED</option><option ${l.status==='NPA'?'selected':''}>NPA</option><option ${l.status==='CLOSED'?'selected':''}>CLOSED</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Collateral</label><input class="fi" id="el-col" value="${l.collateral||''}"></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-navy" onclick="saveEditLoan('${loanId}',${l.id})">Save Changes</button></div>
+  </div>`);
+}
+
+function saveEditLoan(loanId,id) {
+  update('loans',id,{rate:parseFloat(document.getElementById('el-r').value),cibil:parseInt(document.getElementById('el-c').value),npa_days:parseInt(document.getElementById('el-n').value),status:document.getElementById('el-s').value,collateral:document.getElementById('el-col').value});
+  auditLog('EDIT_LOAN','loans',id,`Loan ${loanId} edited`);
+  closeModal(); showToast('Loan updated ✓','tg'); renderPage('loans');
+}
+
+function delLoan(loanId) {
+  const l=findOne('loans',l=>l.loan_id===loanId);
+  if(!confirm(`Delete loan ${loanId}?`)) return;
+  remove('loans',l.id);
+  auditLog('DELETE_LOAN','loans',l.id,`Deleted ${loanId}`);
+  showToast('Loan deleted','tr'); renderPage('loans');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: RISK
+// ═══════════════════════════════════════════════════════════════════════════
+function rRisk(el) {
+  const snap=DB.financial_snapshots.find(s=>s.period==='Q3-FY25')||{};
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-g"><div class="kl">CAR</div><div class="kv">${snap.car||16.42}%</div><div class="kd up">Min req: 11.5%</div></div>
+    <div class="kcard kc-o"><div class="kl">LCR</div><div class="kv">${snap.lcr||142}%</div><div class="kd up">Min req: 100%</div></div>
+    <div class="kcard kc-b"><div class="kl">GNPA</div><div class="kv">${snap.gnpa||4.09}%</div><div class="kd dn">Improving</div></div>
+    <div class="kcard kc-p"><div class="kl">NNPA</div><div class="kv">${snap.nnpa||0.96}%</div><div class="kd up">Below 1%</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Risk Assessment Matrix</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+        ${[['Credit Risk','MEDIUM','GNPA 4.09% · NNPA 0.96%'],['Market Risk','LOW','Duration 2.4yr · VaR ₹842Cr'],['Liquidity Risk','LOW','LCR 142% · NSFR 118%'],['Operational Risk','HIGH','3 fraud cases active']].map(([t,r,s])=>`
+          <div style="padding:12px;background:var(--off);border-radius:8px;border:1px solid var(--border)">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">${t}</div>
+            <div class="risk-${r}" style="margin-bottom:4px">${r}</div>
+            <div style="font-size:11px;color:var(--muted)">${s}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">RBI Compliance — Live Check</div>
+      ${[['CRR','4.00%','4.02%',true],['SLR','18.00%','19.80%',true],['PSL','40.00%','41.20%',true],['CAR','11.50%','16.42%',true],['LCR','100.00%','142.00%',true],['Quarterly Report','—','Due 3 days',false]].map(([m,req,act,ok])=>`
+        <div class="srow"><span class="sk">${m} <span style="color:var(--muted);font-size:10px">(${req})</span></span>
+        <span class="${ok?'badge bg':'badge by'}">${act}${ok?' ✓':' ⚠'}</span></div>`).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <div class="sec-title">Sector Credit Exposure <span style="font-size:11px;font-weight:400;color:var(--muted)">✏️ Click exposure/NPA values to edit</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Sector</th><th>Exposure (₹Cr)</th><th>% of Book</th><th>NPA %</th><th>Limit (₹Cr)</th><th>Utilisation</th><th>Risk</th></tr></thead>
+      <tbody>${[
+        {s:'Infrastructure',exp:184200,pct:18.8,npa:6.2,lim:200000},
+        {s:'Agriculture',exp:196000,pct:20.0,npa:3.1,lim:250000},
+        {s:'MSME',exp:152000,pct:15.5,npa:4.8,lim:200000},
+        {s:'Retail Housing',exp:210000,pct:21.4,npa:1.2,lim:300000},
+        {s:'Manufacturing',exp:98000,pct:10.0,npa:5.1,lim:150000},
+        {s:'Services',exp:158000,pct:14.3,npa:2.8,lim:200000},
+      ].map(r=>{
+        const util=Math.round(r.exp/r.lim*100);
+        const risk=r.npa>5?'HIGH':r.npa>3.5?'MEDIUM':'LOW';
+        return`<tr>
+          <td style="font-weight:500">${r.s}</td>
+          <td style="font-weight:600">${fmt(r.exp)}</td>
+          <td>${r.pct}%</td>
+          <td><span style="font-weight:600;color:${r.npa>5?'var(--red)':r.npa>3?'var(--gold)':'var(--green)'}">${r.npa}%</span></td>
+          <td>${fmt(r.lim)}</td>
+          <td><div style="display:flex;align-items:center;gap:6px"><div class="progress" style="width:80px"><div class="pf" style="width:${util}%;background:${util>90?'var(--red)':util>75?'var(--gold)':'var(--teal)'}"></div></div><span style="font-size:10px">${util}%</span></div></td>
+          <td><span class="risk-${risk}">${risk}</span></td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: FRAUD
+// ═══════════════════════════════════════════════════════════════════════════
+function rFraud(el) {
+  const alerts=[...DB.fraud_alerts].sort((a,b)=>{const o={CRITICAL:1,HIGH:2,MEDIUM:3,LOW:4};return(o[a.severity]||5)-(o[b.severity]||5);});
+  const open=alerts.filter(a=>a.status==='OPEN').length;
+  const byType={};
+  alerts.forEach(a=>{if(!byType[a.type])byType[a.type]=0;byType[a.type]++;});
+
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-r"><div class="kl">Open Alerts</div><div class="kv" style="color:var(--red)">${open}</div><div class="kd dn">Requires action</div></div>
+    <div class="kcard kc-o"><div class="kl">Total Alerts</div><div class="kv">${alerts.length}</div></div>
+    <div class="kcard kc-g"><div class="kl">Resolved</div><div class="kv">${alerts.filter(a=>a.status==='RESOLVED').length}</div></div>
+    <div class="kcard kc-b"><div class="kl">AI Accuracy</div><div class="kv">94.8%</div><div class="kd up">Model v4.2</div></div>
+  </div>
+  <div class="g70">
+    <div class="card">
+      <div class="sec-title">Fraud Alerts <span style="font-size:11px;font-weight:400;color:var(--muted)">✏️ Click status to edit</span></div>
+      ${alerts.map(a=>{
+        const c=findOne('customers',c=>c.account_no===a.account_no);
+        return`<div style="border:1px solid ${a.severity==='CRITICAL'?'#fca5a5':a.severity==='HIGH'?'#fed7aa':'var(--border)'};border-radius:9px;padding:13px;margin-bottom:9px;background:${a.status==='RESOLVED'?'var(--off)':a.severity==='CRITICAL'?'#fff5f5':a.severity==='HIGH'?'#fffbf5':'var(--white)'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap">
+                <span style="font-weight:700;font-size:12px">${a.ref}</span>
+                ${bSev(a.severity)} <span id="fa-st-${a.id}" data-val="${a.status}">${bSt(a.status)}</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:2px">Account: <span class="mono">${a.account_no||'—'}</span>${c?' · '+c.name:''}</div>
+              <div style="font-size:13px">${a.desc}</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px"><span class="badge bb">${a.type.replace('_',' ')}</span> · Confidence: <strong>${a.confidence}%</strong> · ${a.created_at?.substring(0,16)}</div>
+            </div>
+            ${a.status==='OPEN'&&canDo('block')?`<div style="display:flex;gap:5px;flex-shrink:0">
+              <button class="btn btn-red btn-sm" onclick="resolveAlert(${a.id},'${a.account_no}',true)">🚫 Block A/C</button>
+              <button class="btn btn-out btn-sm" onclick="resolveAlert(${a.id},null,false)">🔍 Investigate</button>
+            </div>`:''}
+          </div>
+        </div>`;}).join('')}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card"><div class="card-title">AI Detection Engine</div>
+        <div class="srow"><span class="sk">Model</span><span class="sv">XGBoost v4.2</span></div>
+        <div class="srow"><span class="sk">Accuracy</span><span class="sv" style="color:var(--green)">94.8%</span></div>
+        <div class="srow"><span class="sk">False Positive</span><span class="sv">2.1%</span></div>
+        <div class="srow"><span class="sk">Features</span><span class="sv">48 signals</span></div>
+        <div class="srow"><span class="sk">Last Trained</span><span class="sv">15 Mar 2025</span></div>
+      </div>
+      <div class="card"><div class="card-title">Alerts by Type</div>
+        ${Object.entries(byType).map(([t,n])=>progressRow(t.replace('_',' '),Math.round(n/alerts.length*100),'var(--red)',`(${n})`)).join('')}
+      </div>
+      ${canDo('create')?`<div class="card"><div class="card-title">Create Alert</div>
+        <button class="btn btn-gold" style="width:100%" onclick="openAddAlert()">+ Add Fraud Alert</button>
+      </div>`:''}
+    </div>
+  </div>`;
+
+  if(canDo('edit')) {
+    alerts.forEach(a=>{
+      const sEl=document.getElementById(`fa-st-${a.id}`);
+      if(sEl) makeEditable(sEl,'fraud_alerts',a.id,'status','select',['OPEN','INVESTIGATING','RESOLVED','FALSE_POSITIVE']);
+    });
+  }
+}
+
+function resolveAlert(id, accNo, block) {
+  update('fraud_alerts',id,{status:block?'RESOLVED':'INVESTIGATING',resolved_by:currentSession.id});
+  if(block&&accNo){
+    const c=findOne('customers',c=>c.account_no===accNo);
+    if(c){update('customers',c.id,{active:0});auditLog('BLOCK_ACCOUNT','fraud',accNo,`Blocked via alert`);}
+    showToast(`Account ${accNo} blocked. Alert resolved.`,'tr');
+  } else {
+    showToast(`Alert moved to investigation`,'to');
+  }
+  auditLog('RESOLVE_ALERT','fraud',id,block?'Account blocked':'Investigation started');
+  buildNav(); renderPage('fraud');
+}
+
+function openAddAlert() {
+  openModal(`<div class="modal">
+    <div class="modal-t">Add Fraud Alert <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fg"><label class="fl">Account No.</label><input class="fi" id="fa-acc" placeholder="PNB..."></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Alert Type</label><select class="fi fsel" id="fa-type"><option>VELOCITY</option><option>IDENTITY</option><option>UNUSUAL_AMOUNT</option><option>GEO_ANOMALY</option><option>DEVICE</option></select></div>
+      <div class="fg"><label class="fl">Severity</label><select class="fi fsel" id="fa-sev"><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">AI Confidence %</label><input class="fi" id="fa-conf" type="number" min="1" max="100" placeholder="e.g. 85"></div>
+    <div class="fg"><label class="fl">Description *</label><textarea class="fi" id="fa-desc" rows="3" placeholder="Describe the suspicious activity..."></textarea></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-red" onclick="saveAlert()">Create Alert</button></div>
+  </div>`);
+}
+
+function saveAlert() {
+  const desc=document.getElementById('fa-desc').value.trim();
+  if(!desc){showToast('Description required','tr');return;}
+  const a=insert('fraud_alerts',{ref:'ALERT-'+Date.now()%1000000,account_no:document.getElementById('fa-acc').value||null,txn_ref:null,type:document.getElementById('fa-type').value,severity:document.getElementById('fa-sev').value,confidence:parseFloat(document.getElementById('fa-conf').value)||50,desc,status:'OPEN',resolved_by:null});
+  auditLog('CREATE_ALERT','fraud',a.id,`Manual alert: ${a.type}`);
+  closeModal(); showToast('Fraud alert created','to'); buildNav(); renderPage('fraud');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: FINANCIAL
+// ═══════════════════════════════════════════════════════════════════════════
+function rFinancial(el) {
+  const snaps=DB.financial_snapshots;
+  const cur=snaps.find(s=>s.period==='Q3-FY25')||{};
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-g"><div class="kl">Net Profit (Q3)</div><div class="kv">₹3,441 Cr</div><div class="kd up">▲ 22.7% QoQ</div></div>
+    <div class="kcard kc-b"><div class="kl">Net Interest Income</div><div class="kv">₹32,180 Cr</div><div class="kd up">▲ 16.4% YoY</div></div>
+    <div class="kcard kc-o"><div class="kl">Operating Profit</div><div class="kv">₹18,420 Cr</div><div class="kd up">▲ 28.2% YoY</div></div>
+    <div class="kcard kc-p"><div class="kl">EPS</div><div class="kv">₹111.4</div><div class="kd up">▲ YoY</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">P&L Statement — FY 2024-25 (₹ Crores) <span style="font-size:10px;color:var(--muted);font-weight:400">✏️ Click values to edit snapshot</span></div>
+      ${[['Interest Income',92840,false,''],['Interest Expense',-60660,true,''],['Net Interest Income',32180,false,'hl'],['Non-Interest Income',8240,false,''],['Operating Expenses',-22000,true,''],['Operating Profit',18420,false,'hl'],['Provisions',-5579,true,''],['Net Profit (PAT)',12841,false,'total']].map(([l,v,neg,type])=>`
+        <div style="display:flex;justify-content:space-between;padding:${type==='total'?'11px':'7px'} 11px;border-radius:5px;margin-bottom:2px;background:${type==='total'?'#f0fdf4':type==='hl'?'#eff6ff':'transparent'};border:${type==='total'?'1px solid #86efac':type==='hl'?'1px solid #bae6fd':'none'}">
+          <span style="font-weight:${type==='total'?'700':'400'};font-size:${type==='total'?'14px':'13px'}">${l}</span>
+          <span style="font-weight:${type==='total'||type==='hl'?'700':'500'};color:${neg?'var(--red)':type==='total'?'var(--green)':'inherit'}">${neg?'–':''}₹${Math.abs(v).toLocaleString('en-IN')}</span>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">Key Ratios <span style="font-size:10px;color:var(--muted)">✏️ Click values to edit</span></div>
+      ${[['ROA','roa','%'],['ROE','roe','%'],['NIM','nim','%'],['GNPA','gnpa','%'],['NNPA','nnpa','%'],['CAR','car','%'],['Cost/Income','ci','%']].map(([k,field,sfx])=>{
+        const snapRow=DB.financial_snapshots.find(s=>s.period==='Q3-FY25');
+        const sid=snapRow?.id||3;
+        return`<div class="srow"><span class="sk">${k}</span><span id="fin-${field}" class="sv" data-val="${cur[field]||''}">${cur[field]||'—'}${sfx}</span></div>`;}).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quarterly Trend</div>
+    <div style="display:flex;gap:5px;margin-top:8px">
+      ${snaps.filter(s=>s.type==='QUARTERLY').map(s=>`<div style="flex:1;text-align:center">
+        <div style="background:var(--teal);border-radius:4px 4px 0 0;height:${Math.round(s.profit/4000000*120)}px;margin-bottom:4px"></div>
+        <div style="font-size:11px;font-weight:600">${fmtCr(s.profit)}</div>
+        <div style="font-size:10px;color:var(--muted)">${s.period}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+
+  if(canDo('edit')) {
+    const snapRow=DB.financial_snapshots.find(s=>s.period==='Q3-FY25');
+    if(snapRow) {
+      ['roa','roe','nim','gnpa','nnpa','car','ci'].forEach(field=>{
+        const el2=document.getElementById(`fin-${field}`);
+        if(el2) makeEditable(el2,'financial_snapshots',snapRow.id,field,'number');
+      });
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: TREASURY
+// ═══════════════════════════════════════════════════════════════════════════
+function rTreasury(el) {
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-b"><div class="kl">Investment Portfolio</div><div class="kv">₹3.8L Cr</div><div class="kd n">26.8% of assets</div></div>
+    <div class="kcard kc-o"><div class="kl">SLR Holdings</div><div class="kv">₹2.1L Cr</div><div class="kd up">19.8% (req: 18%)</div></div>
+    <div class="kcard kc-g"><div class="kl">Forex Position</div><div class="kv">$4.2 Bn</div><div class="kd n">USD/INR: 83.42</div></div>
+    <div class="kcard kc-r"><div class="kl">Modified Duration</div><div class="kv">2.4 yrs</div><div class="kd n">Interest rate risk</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Investment Portfolio (₹ Crores) <span style="font-size:10px;color:var(--muted)">✏️ Click to edit</span></div>
+      ${[['Govt Securities (G-Sec)',210000,55.3,'var(--navy)'],['State Dev. Loans (SDL)',58000,15.3,'var(--teal)'],['T-Bills',42000,11.0,'var(--gold)'],['Corporate Bonds',38400,10.1,'var(--purple)'],['Foreign Securities',19400,5.1,'var(--green)'],['Equities & MFs',12200,3.2,'#0369a1']].map(([l,v,pct,c])=>`
+        <div class="srow"><span class="sk">${l}</span><span style="display:flex;align-items:center;gap:8px">
+          <div class="progress" style="width:70px"><div class="pf" style="width:${pct*2}%;background:${c}"></div></div>
+          <span class="sv">${fmt(v)}</span>
+        </span></div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">Forex Rates (Indicative)</div>
+      ${[['USD/INR','83.42','+0.12%'],['EUR/INR','90.18','-0.08%'],['GBP/INR','105.62','+0.31%'],['JPY/INR','0.558','-0.04%'],['AED/INR','22.71','+0.05%'],['SGD/INR','62.40','+0.19%']].map(([p,r,chg])=>`
+        <div class="srow"><span class="sk">${p}</span><span style="display:flex;align-items:center;gap:8px">
+          <span class="sv mono">${r}</span>
+          <span style="font-size:10px;color:${chg.startsWith('+')?'var(--green)':'var(--red)'}">${chg}</span>
+        </span></div>`).join('')}
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">Rates as of 22 Mar 2025 14:30 IST</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: BRANCHES
+// ═══════════════════════════════════════════════════════════════════════════
+function rBranches(el) {
+  const role=currentSession.role;
+  const rows=['BM','BO','TELLER'].includes(role)&&currentSession.branchId
+    ? DB.branches.filter(b=>b.id===currentSession.branchId) : DB.branches;
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-b"><div class="kl">Total Branches</div><div class="kv">10,084</div><div class="kd n">Pan-India</div></div>
+    <div class="kcard kc-o"><div class="kl">ATM Network</div><div class="kv">13,400+</div><div class="kd up">+840 new FY25</div></div>
+    <div class="kcard kc-g"><div class="kl">Digital Banking Units</div><div class="kv">384</div></div>
+    <div class="kcard kc-p"><div class="kl">Zones</div><div class="kv">13</div></div>
+  </div>
+  <div class="card">
+    <div class="sec-title">Branch Performance <span style="font-size:11px;font-weight:400;color:var(--muted)">✏️ Click deposits/advances/NPA to edit</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Code</th><th>Branch</th><th>Zone</th><th>City</th><th>Deposits (₹Cr)</th><th>Advances (₹Cr)</th><th>NPA %</th><th>CD Ratio</th><th>Performance</th></tr></thead>
+      <tbody>${rows.map(b=>{
+        const cd=(b.advances/b.deposits*100).toFixed(1);
+        const perf=b.npa_pct<3&&cd>70?'GOOD':b.npa_pct>6||cd<60?'POOR':'AVERAGE';
+        return`<tr>
+          <td class="mono">${b.code}</td>
+          <td style="font-weight:500">${b.name}</td>
+          <td><span class="badge bb">${b.zone}</span></td>
+          <td>${b.city}</td>
+          <td><span id="eb-dep-${b.id}" data-val="${b.deposits}">${fmt(b.deposits)}</span></td>
+          <td><span id="eb-adv-${b.id}" data-val="${b.advances}">${fmt(b.advances)}</span></td>
+          <td><span id="eb-npa-${b.id}" style="font-weight:600;color:${b.npa_pct>5?'var(--red)':b.npa_pct>3.5?'var(--gold)':'var(--green)'}" data-val="${b.npa_pct}">${b.npa_pct}%</span></td>
+          <td>${cd}%</td>
+          <td><span class="badge ${perf==='GOOD'?'bg':perf==='POOR'?'br':'by'}">${perf}</span></td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+
+  if(canDo('edit')) {
+    rows.forEach(b=>{
+      const dEl=document.getElementById(`eb-dep-${b.id}`);
+      const aEl=document.getElementById(`eb-adv-${b.id}`);
+      const nEl=document.getElementById(`eb-npa-${b.id}`);
+      if(dEl) makeEditable(dEl,'branches',b.id,'deposits','number');
+      if(aEl) makeEditable(aEl,'branches',b.id,'advances','number');
+      if(nEl) makeEditable(nEl,'branches',b.id,'npa_pct','number');
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: COMPLAINTS
+// ═══════════════════════════════════════════════════════════════════════════
+function rComplaints(el) {
+  const comps=DB.complaints.map(c=>({...c, custName:findOne('customers',cu=>cu.id===c.customer_id)?.name||'—', branchName:findOne('branches',b=>b.id===c.branch_id)?.name||'—'}));
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-r"><div class="kl">Open</div><div class="kv">${comps.filter(c=>c.status==='OPEN').length}</div></div>
+    <div class="kcard kc-b"><div class="kl">In Progress</div><div class="kv">${comps.filter(c=>c.status==='IN_PROGRESS').length}</div></div>
+    <div class="kcard kc-g"><div class="kl">Resolved</div><div class="kv">${comps.filter(c=>c.status==='RESOLVED').length}</div></div>
+    <div class="kcard kc-o"><div class="kl">Total</div><div class="kv">${comps.length}</div></div>
+  </div>
+  <div class="card">
+    <div class="sec-title">Complaint Register
+      <div class="sec-r">
+        ${canDo('create')?`<button class="btn btn-gold btn-sm" onclick="openAddComplaint()">+ New Complaint</button>`:''}
+        <span style="font-size:11px;color:var(--muted)">✏️ Click status to update</span>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Ref</th><th>Customer</th><th>Category</th><th>Priority</th><th>Branch</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody>${comps.map(c=>`<tr>
+        <td class="mono">${c.ref}</td>
+        <td>${c.custName}</td>
+        <td>${c.category}</td>
+        <td><span class="badge ${c.priority==='URGENT'?'br':c.priority==='HIGH'?'bo':c.priority==='LOW'?'bn':'bb'}">${c.priority}</span></td>
+        <td>${c.branchName}</td>
+        <td><span id="ec-st-${c.id}" data-val="${c.status}">${bSt(c.status)}</span></td>
+        <td style="font-size:11px;color:var(--muted)">${c.created_at?.substring(0,10)}</td>
+        <td>
+          <button class="btn btn-ghost btn-xs" onclick="viewComplaint(${c.id})">👁 View</button>
+          ${canDo('edit')&&c.status!=='RESOLVED'?`<button class="btn btn-green btn-xs" onclick="resolveComplaint(${c.id})">✓ Resolve</button>`:''}
+          ${canDo('delete')?`<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="delComplaint(${c.id})">🗑</button>`:''}
+        </td>
+      </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+
+  if(canDo('edit')) {
+    comps.forEach(c=>{
+      const sEl=document.getElementById(`ec-st-${c.id}`);
+      if(sEl) makeEditable(sEl,'complaints',c.id,'status','select',['OPEN','IN_PROGRESS','RESOLVED','CLOSED']);
+    });
+  }
+}
+
+function viewComplaint(id) {
+  const c=findOne('complaints',c=>c.id===id);
+  const cust=findOne('customers',cu=>cu.id===c.customer_id);
+  openModal(`<div class="modal">
+    <div class="modal-t">Complaint — ${c.ref} <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="srow"><span class="sk">Customer</span><span class="sv">${cust?.name||'—'}</span></div>
+    <div class="srow"><span class="sk">Category</span><span class="badge bb">${c.category}</span></div>
+    <div class="srow"><span class="sk">Priority</span><span class="badge ${c.priority==='URGENT'?'br':c.priority==='HIGH'?'bo':'bb'}">${c.priority}</span></div>
+    <div class="srow"><span class="sk">Status</span><span>${bSt(c.status)}</span></div>
+    <div style="margin-top:12px"><div class="fl" style="display:block">Description</div><div style="padding:10px;background:var(--off);border-radius:6px;font-size:13px;margin-top:4px">${c.desc}</div></div>
+    ${c.resolution?`<div style="margin-top:10px"><div class="fl" style="display:block">Resolution</div><div style="padding:10px;background:#f0fdf4;border-radius:6px;font-size:13px;margin-top:4px;color:var(--green)">${c.resolution}</div></div>`:''}
+    <div class="modal-actions">
+      <button class="btn btn-out" onclick="closeModal()">Close</button>
+      ${canDo('edit')?`<button class="btn btn-navy" onclick="closeModal();editComplaint(${id})">✏️ Edit</button>`:''}
+      ${canDo('edit')&&c.status!=='RESOLVED'?`<button class="btn btn-green" onclick="closeModal();resolveComplaint(${id})">✓ Resolve</button>`:''}
+    </div>
+  </div>`);
+}
+
+function openAddComplaint() {
+  const custs=DB.customers.filter(c=>c.active);
+  openModal(`<div class="modal">
+    <div class="modal-t">Register Complaint <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fg"><label class="fl">Customer</label><select class="fi fsel" id="nc-cust"><option value="">-- Select --</option>${custs.map(c=>`<option value="${c.id}">${c.name} (${c.account_no})</option>`).join('')}</select></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Category</label><select class="fi fsel" id="nc-cat"><option>ATM Issue</option><option>Net Banking</option><option>Loan Query</option><option>KYC</option><option>Fraud</option><option>Service</option><option>Other</option></select></div>
+      <div class="fg"><label class="fl">Priority</label><select class="fi fsel" id="nc-pri"><option>LOW</option><option selected>NORMAL</option><option>HIGH</option><option>URGENT</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Description *</label><textarea class="fi" id="nc-desc" rows="3" placeholder="Describe the issue..."></textarea></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-gold" onclick="saveComplaint()">Submit</button></div>
+  </div>`);
+}
+
+function saveComplaint() {
+  const desc=document.getElementById('nc-desc').value.trim();
+  if(!desc){showToast('Description required','tr');return;}
+  const custId=document.getElementById('nc-cust').value;
+  const ref='CMP-'+new Date().getFullYear()+'-'+String(DB.complaints.length+1).padStart(4,'0');
+  insert('complaints',{ref,customer_id:custId?parseInt(custId):null,category:document.getElementById('nc-cat').value,desc,priority:document.getElementById('nc-pri').value,status:'OPEN',assigned_to:null,branch_id:currentSession.branchId||1,resolution:null,created_at:now().substring(0,10)});
+  auditLog('CREATE_COMPLAINT','complaints',null,`${ref}: ${desc.substring(0,50)}`);
+  closeModal(); showToast('Complaint registered ✓','tg'); renderPage('complaints');
+}
+
+function editComplaint(id) {
+  const c=findOne('complaints',c=>c.id===id);
+  openModal(`<div class="modal">
+    <div class="modal-t">Edit Complaint <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Category</label><input class="fi" id="ecomp-cat" value="${c.category}"></div>
+      <div class="fg"><label class="fl">Priority</label><select class="fi fsel" id="ecomp-pri"><option ${c.priority==='LOW'?'selected':''}>LOW</option><option ${c.priority==='NORMAL'?'selected':''}>NORMAL</option><option ${c.priority==='HIGH'?'selected':''}>HIGH</option><option ${c.priority==='URGENT'?'selected':''}>URGENT</option></select></div>
+    </div>
+    <div class="fg"><label class="fl">Description</label><textarea class="fi" id="ecomp-desc" rows="3">${c.desc}</textarea></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-navy" onclick="saveEditComplaint(${id})">Save</button></div>
+  </div>`);
+}
+
+function saveEditComplaint(id) {
+  update('complaints',id,{category:document.getElementById('ecomp-cat').value,priority:document.getElementById('ecomp-pri').value,desc:document.getElementById('ecomp-desc').value});
+  auditLog('EDIT_COMPLAINT','complaints',id,'Complaint edited');
+  closeModal(); showToast('Complaint updated ✓','tg'); renderPage('complaints');
+}
+
+function resolveComplaint(id) {
+  openModal(`<div class="modal">
+    <div class="modal-t">Resolve Complaint <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fg"><label class="fl">Resolution Notes *</label><textarea class="fi" id="res-n" rows="3" placeholder="How was this resolved?"></textarea></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-green" onclick="submitResolve(${id})">Mark Resolved</button></div>
+  </div>`);
+}
+
+function submitResolve(id) {
+  const notes=document.getElementById('res-n').value.trim();
+  if(!notes){showToast('Resolution notes required','tr');return;}
+  update('complaints',id,{status:'RESOLVED',resolution:notes,assigned_to:currentSession.id});
+  auditLog('RESOLVE_COMPLAINT','complaints',id,notes.substring(0,80));
+  closeModal(); showToast('Complaint resolved ✓','tg'); renderPage('complaints');
+}
+
+function delComplaint(id) {
+  if(!confirm('Delete this complaint?')) return;
+  remove('complaints',id);
+  auditLog('DELETE_COMPLAINT','complaints',id,'Deleted');
+  showToast('Complaint deleted','tr'); renderPage('complaints');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: REPORTS
+// ═══════════════════════════════════════════════════════════════════════════
+function rReports(el) {
+  el.innerHTML=`
+  <div class="card" style="margin-bottom:18px">
+    <div class="sec-title">Generate MIS Report</div>
+    <div class="fr3">
+      <div class="fg"><label class="fl">Report Type</label><select class="fi fsel" id="rpt-t"><option>Branch Performance</option><option>NPA & Recovery</option><option>P&L Summary</option><option>Credit Risk</option><option>Transaction Volume</option><option>Customer Acquisition</option><option>RBI Compliance</option><option>Fraud Summary</option></select></div>
+      <div class="fg"><label class="fl">Period</label><select class="fi fsel" id="rpt-p"><option>Q3 FY 2024-25</option><option>Q2 FY 2024-25</option><option>FY 2024-25 Full Year</option><option>Mar 2025</option></select></div>
+      <div class="fg"><label class="fl">Scope</label><select class="fi fsel">${['CMD','ED','GM'].includes(currentSession.role)?'<option>All India</option>':''}<option>Zone Level</option><option>Branch Level</option></select></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-navy" onclick="generateReport()">📊 Generate</button>
+      ${canDo('export')?`<button class="btn btn-out" onclick="exportDB()">📥 Export Full DB (JSON)</button>`:''}
+    </div>
+  </div>
+  <div id="rpt-out" style="display:none" class="card" style="margin-bottom:18px"></div>
+  <div class="card">
+    <div class="sec-title">Scheduled Reports</div>
+    <table><thead><tr><th>Report</th><th>Frequency</th><th>Recipients</th><th>Last Run</th><th>Status</th></tr></thead><tbody>
+      ${[['Daily Transaction Summary','Daily 8AM','GM, DGM','22 Mar 2025','ACTIVE'],['NPA Weekly Tracker','Weekly Mon','CMD, ED, GM','17 Mar 2025','ACTIVE'],['RBI CRR/SLR','Fortnightly','Treasury','15 Mar 2025','ACTIVE'],['Customer Acquisition','Monthly','Zonal Heads','01 Mar 2025','ACTIVE'],['Fraud Detection','Daily 6PM','GM Security','21 Mar 2025','DELAYED']].map(([r,f,rec,d,s])=>`<tr><td style="font-weight:500">${r}</td><td>${f}</td><td style="color:var(--muted)">${rec}</td><td style="font-size:11px">${d}</td><td><span class="badge ${s==='ACTIVE'?'bg':'by'}">${s}</span></td></tr>`).join('')}
+    </tbody></table>
+  </div>`;
+}
+
+function generateReport() {
+  const type=document.getElementById('rpt-t').value;
+  const period=document.getElementById('rpt-p').value;
+  const snap=DB.financial_snapshots.find(s=>s.period==='Q3-FY25')||{};
+  const out=document.getElementById('rpt-out');
+  out.style.display='block';
+  out.innerHTML=`
+    <div class="sec-title">${type} — ${period} <span style="font-size:11px;font-weight:400;color:var(--muted)">Generated ${new Date().toLocaleString('en-IN')} by ${currentSession.name} (${currentSession.role})</span></div>
+    <div class="alert a-b" style="margin-bottom:14px"><div>Provisional figures from live database. Last sync: ${new Date().toLocaleTimeString('en-IN')}.</div></div>
+    <div class="kgrid">
+      <div class="kcard kc-b"><div class="kl">Total Deposits</div><div class="kv">${fmtCr(snap.deposits||14200000)}</div></div>
+      <div class="kcard kc-o"><div class="kl">Total Advances</div><div class="kv">${fmtCr(snap.advances||9800000)}</div></div>
+      <div class="kcard kc-g"><div class="kl">Net Profit</div><div class="kv">${fmtCr(snap.profit||3441000)}</div></div>
+      <div class="kcard kc-r"><div class="kl">GNPA</div><div class="kv">${snap.gnpa||4.09}%</div></div>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="card-title">Loan Portfolio</div>
+        ${Object.entries(DB.loans.reduce((a,l)=>{if(!a[l.status])a[l.status]={cnt:0,amt:0};a[l.status].cnt++;a[l.status].amt+=l.principal;return a},{})).map(([s,d])=>`<div class="srow"><span>${bSt(s)}</span><span class="sv">${d.cnt} · ${fmtAmt(d.amt)}</span></div>`).join('')}
+      </div>
+      <div>
+        <div class="card-title">System Snapshot</div>
+        <div class="srow"><span class="sk">Active Customers</span><span class="sv">${DB.customers.filter(c=>c.active).length}</span></div>
+        <div class="srow"><span class="sk">Total Transactions</span><span class="sv">${DB.transactions.length}</span></div>
+        <div class="srow"><span class="sk">Open Fraud Alerts</span><span class="sv" style="color:var(--red)">${DB.fraud_alerts.filter(a=>a.status==='OPEN').length}</span></div>
+        <div class="srow"><span class="sk">Open Complaints</span><span class="sv">${DB.complaints.filter(c=>c.status==='OPEN').length}</span></div>
+        <div class="srow"><span class="sk">CAR</span><span class="sv" style="color:var(--green)">${snap.car||16.42}%</span></div>
+      </div>
+    </div>`;
+  auditLog('GENERATE_REPORT','reports',null,`${type} for ${period}`);
+  out.scrollIntoView({behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: USERS
+// ═══════════════════════════════════════════════════════════════════════════
+function rUsers(el) {
+  const users=DB.users.map(u=>({...u,roleName:findOne('roles',r=>r.id===u.role_id)?.name||'—',branchName:findOne('branches',b=>b.id===u.branch_id)?.name||'Head Office'}));
+  el.innerHTML=`
+  <div class="kgrid">
+    <div class="kcard kc-b"><div class="kl">Total Staff</div><div class="kv">${users.length}</div></div>
+    <div class="kcard kc-g"><div class="kl">Active</div><div class="kv">${users.filter(u=>u.active).length}</div></div>
+    <div class="kcard kc-r"><div class="kl">Inactive</div><div class="kv">${users.filter(u=>!u.active).length}</div></div>
+    <div class="kcard kc-o"><div class="kl">Roles</div><div class="kv">${DB.roles.length}</div></div>
+  </div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">Role Access Matrix</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Role</th><th>Level</th><th>Modules</th><th>Max Actions</th></tr></thead>
+      <tbody>${Object.entries(PERMS).map(([r,mods])=>`<tr>
+        <td>${rBadge(r)}</td>
+        <td><span class="badge bn">${['CMD','ED'].includes(r)?'Head Office':['GM','DGM','AUDITOR'].includes(r)?'Senior':['RM','BM'].includes(r)?'Regional':'Branch'}</span></td>
+        <td style="font-size:11px;color:var(--muted)">${mods.join(', ')}</td>
+        <td style="font-size:11px">${ACTIONS[r].join(', ')}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="sec-title">Staff Directory
+      <div class="sec-r">
+        ${canDo('create')?`<button class="btn btn-gold btn-sm" onclick="openAddUser()">+ Add Staff</button>`:''}
+        <span style="font-size:11px;color:var(--muted)">✏️ Click role/zone to edit</span>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Emp ID</th><th>Name</th><th>Role</th><th>Branch</th><th>Zone</th><th>Last Login</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>${users.map(u=>`<tr>
+        <td class="mono">${u.emp_id}</td>
+        <td style="font-weight:500">${u.name}</td>
+        <td><span id="eu-role-${u.id}" data-val="${u.roleName}">${rBadge(u.roleName)}</span></td>
+        <td>${u.branchName}</td>
+        <td><span id="eu-zone-${u.id}" data-val="${u.zone||''}">${u.zone||'—'}</span></td>
+        <td style="font-size:11px;color:var(--muted)">${u.last_login?.substring(0,16)||'Never'}</td>
+        <td>${u.active?'<span class="badge bg">Active</span>':'<span class="badge br">Inactive</span>'}</td>
+        <td>${u.emp_id!==currentSession.empId&&canDo('edit')?`<button class="btn btn-ghost btn-xs" onclick="toggleUser(${u.id},${u.active},'${u.name}')">${u.active?'Disable':'Enable'}</button>`:''} ${canDo('delete')&&u.emp_id!==currentSession.empId?`<button class="btn btn-ghost btn-xs" style="color:var(--red)" onclick="delUser(${u.id},'${u.name}')">🗑</button>`:''}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+
+  if(canDo('edit')) {
+    users.forEach(u=>{
+      const zEl=document.getElementById(`eu-zone-${u.id}`);
+      if(zEl) makeEditable(zEl,'users',u.id,'zone','text');
+    });
+  }
+}
+
+function toggleUser(id,active,name) {
+  if(!confirm(`${active?'Disable':'Enable'} account for ${name}?`)) return;
+  update('users',id,{active:active?0:1});
+  auditLog(active?'DISABLE_USER':'ENABLE_USER','users',id,name);
+  showToast(`${name} ${active?'disabled':'enabled'}`,active?'tr':'tg');
+  renderPage('users');
+}
+
+function delUser(id,name) {
+  if(!confirm(`PERMANENTLY DELETE user ${name}?`)) return;
+  remove('users',id);
+  auditLog('DELETE_USER','users',id,`Deleted ${name}`);
+  showToast('User deleted','tr'); renderPage('users');
+}
+
+function openAddUser() {
+  const roles=DB.roles;
+  const branches=DB.branches;
+  openModal(`<div class="modal">
+    <div class="modal-t">Add Staff Member <button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Employee ID *</label><input class="fi" id="nu-id" placeholder="EMP0XX"></div>
+      <div class="fg"><label class="fl">Full Name *</label><input class="fi" id="nu-n"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Email *</label><input class="fi" id="nu-e" type="email"></div>
+      <div class="fg"><label class="fl">Password *</label><input class="fi" id="nu-p" type="password" placeholder="Min 6 chars"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Role *</label><select class="fi fsel" id="nu-r">${roles.map(r=>`<option value="${r.id}">${r.name} — ${r.description}</option>`).join('')}</select></div>
+      <div class="fg"><label class="fl">Branch</label><select class="fi fsel" id="nu-b"><option value="">Head Office</option>${branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="fg"><label class="fl">Zone</label><input class="fi" id="nu-z" placeholder="e.g. NORTH, SOUTH, HEAD_OFFICE"></div>
+    <div id="nu-err" class="ferr"></div>
+    <div class="modal-actions"><button class="btn btn-out" onclick="closeModal()">Cancel</button><button class="btn btn-navy" onclick="saveUser()">Create User</button></div>
+  </div>`);
+}
+
+function saveUser() {
+  const empId=document.getElementById('nu-id').value.trim();
+  const name=document.getElementById('nu-n').value.trim();
+  const email=document.getElementById('nu-e').value.trim();
+  const pwd=document.getElementById('nu-p').value;
+  const err=document.getElementById('nu-err');
+  if(!empId||!name||!email||!pwd){err.textContent='All starred fields required.';return;}
+  if(pwd.length<6){err.textContent='Password min 6 chars.';return;}
+  if(findOne('users',u=>u.emp_id===empId||u.email===email)){err.textContent='Emp ID or email already exists.';return;}
+  const roleId=parseInt(document.getElementById('nu-r').value);
+  const branchId=document.getElementById('nu-b').value||null;
+  const zone=document.getElementById('nu-z').value.trim();
+  const u=insert('users',{emp_id:empId,name,email,pwd:hashPwd(pwd),role_id:roleId,branch_id:branchId?parseInt(branchId):null,zone:zone||null,active:1,last_login:null});
+  auditLog('CREATE_USER','users',u.id,`${empId} (${findOne('roles',r=>r.id===roleId)?.name})`);
+  closeModal(); showToast(`User ${empId} created ✓`,'tg'); renderPage('users');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE: AUDIT
+// ═══════════════════════════════════════════════════════════════════════════
+let aPage=1;
+function rAudit(el) {
+  const perPage=25,total=DB.audit_log.length,pages=Math.ceil(total/perPage)||1;
+  if(aPage>pages)aPage=pages;
+  const paged=DB.audit_log.slice((aPage-1)*perPage,aPage*perPage);
+  el.innerHTML=`
+  <div class="card">
+    <div class="sec-title">Audit Log — Full Activity Trail <span style="font-size:11px;font-weight:400;color:var(--muted)">${total} total records</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Timestamp</th><th>Employee</th><th>Role</th><th>Action</th><th>Module</th><th>Record</th><th>Details</th></tr></thead>
+      <tbody>${paged.length?paged.map(l=>`<tr>
+        <td style="font-size:11px;color:var(--muted);white-space:nowrap">${l.created_at?.substring(0,16)}</td>
+        <td class="mono">${l.emp_id||'—'}</td>
+        <td>${l.role?rBadge(l.role):'—'}</td>
+        <td><span class="badge bb">${l.action}</span></td>
+        <td><span class="badge bn">${l.module}</span></td>
+        <td class="mono" style="font-size:10px">${l.record_id||'—'}</td>
+        <td style="font-size:11px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.details||'—'}</td>
+      </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No audit records yet</td></tr>'}
+      </tbody>
+    </table></div>
+    <div class="pag"><span>Showing ${paged.length} of ${total}</span>
+      <div class="pag-btns">
+        <button class="btn btn-out btn-xs" ${aPage<=1?'disabled':''} onclick="aPage--;rAudit(document.getElementById('page-audit'))">← Prev</button>
+        <span style="padding:2px 8px;font-size:11px">${aPage}/${pages}</span>
+        <button class="btn btn-out btn-xs" ${aPage>=pages?'disabled':''} onclick="aPage++;rAudit(document.getElementById('page-audit'))">Next →</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BOOT SEQUENCE
+// ═══════════════════════════════════════════════════════════════════════════
+const DEMO = [
+  {role:'CMD',id:'EMP001',pwd:'cmd123',desc:'Full access · All India'},
+  {role:'ED', id:'EMP002',pwd:'ed123', desc:'Executive Director'},
+  {role:'GM', id:'EMP003',pwd:'gm123', desc:'General Manager · North'},
+  {role:'BM', id:'EMP006',pwd:'bm123', desc:'Branch Manager · Delhi'},
+  {role:'BO', id:'EMP008',pwd:'bo123', desc:'Banking Officer'},
+  {role:'TELLER',id:'EMP009',pwd:'tel123',desc:'Teller · Delhi'},
+  {role:'AUDITOR',id:'EMP010',pwd:'aud123',desc:'Internal Auditor'},
+  {role:'DGM',id:'EMP004',pwd:'dgm123',desc:'Deputy GM'},
+];
+
+document.getElementById('chips').innerHTML = DEMO.map(d=>`
+  <div class="chip" onclick="document.getElementById('li-id').value='${d.id}';document.getElementById('li-pw').value='${d.pwd}'">
+    <div class="chip-r">${d.role}</div>
+    <div class="chip-c">${d.id} / ${d.pwd}</div>
+  </div>`).join('');
+
+// Boot with progress bar
+const steps = ['Initializing MIS engine...','Loading role policies...','Restoring database...','Applying RBAC rules...','Ready!'];
+let step=0, progress=0;
+const bfill=document.getElementById('bfill');
+const bmsg=document.getElementById('bmsg');
+
+const bootInterval = setInterval(()=>{
+  progress = Math.min(100, progress + 22);
+  bfill.style.width = progress + '%';
+  bmsg.textContent = steps[step] || 'Ready!';
+  step++;
+  if(progress >= 100) {
+    clearInterval(bootInterval);
+    // Load or seed DB
+    if(!loadDB()) seed();
+    setTimeout(()=>{
+      document.getElementById('boot').classList.add('out');
+      setTimeout(()=>{
+        document.getElementById('boot').style.display='none';
+        document.getElementById('login').classList.add('on');
+      },400);
+    },400);
+  }
+},350);
+</script>
+</body>
+</html>
